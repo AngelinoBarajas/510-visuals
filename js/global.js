@@ -2,10 +2,6 @@
    CDN: https://cdn.jsdelivr.net/gh/AngelinoBarajas/510-visuals@main/js/global.js
    NOTE: GSAP CDN and Unicorn Studio CDN must be loaded BEFORE this file */
 
-<!-- =========================================================
-  0) Unicorn Studio (load once globally)
-  Where: Site Settings > Footer
-========================================================= -->
 
   !(function () {
     var u = window.UnicornStudio;
@@ -35,10 +31,6 @@
   })();
 
 
-<!-- =========================================================
-  1) GSAP Core (load once globally)
-  Where: Site Settings > Footer
-========================================================= -->
 
 
 
@@ -1125,13 +1117,6 @@
   })();
 
 
-<!-- =========================================================
-  LAYOUT357 — Standalone cards with staggered reveal + fade exit
-  Target: .layout357_content-item and all children
-  Dependencies: GSAP 3.x + ScrollTrigger (already loaded)
-  Safe to remove: Yes — delete this script
-  Changed: 2026-03-25 — Added fade-out exit per card
-========================================================= -->
 
   window.Webflow ||= [];
   window.Webflow.push(() => {

@@ -2,8 +2,6 @@
    CDN: https://cdn.jsdelivr.net/gh/AngelinoBarajas/510-visuals@main/js/homepage.js
    NOTE: SplitType and Swiper must be loaded BEFORE this file */
 
-<!-- Libraries (load once on this page) -->
-
 
 
 
