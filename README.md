@@ -2,21 +2,6 @@
 
 Custom CSS and JS for [510-visuals.webflow.io](https://510-visuals.webflow.io), hosted via jsDelivr CDN.
 
-## File Structure
-
-```
-css/
-├── global.css            Site-wide styles (navbar, transitions, utilities)
-├── homepage.css          Homepage-only (layout484, header5, layout357, layout423, services cards)
-├── project-template.css  Project template (gallery21, gallery10, content17, portfolio header)
-└── about.css             About page (team grid)
-
-js/
-├── global.js             Site-wide scripts (Unicorn Studio, navbar, CTA38, column transitions)
-├── homepage.js           Homepage scripts (layout423 scroller, layout357 reveal, services reveal)
-└── project-template.js   Project template scripts (gallery21 drag, content17 reveal)
-```
-
 ## Webflow Setup
 
 ### Site Settings > Head Code
@@ -37,6 +22,8 @@ js/
 
 ### Homepage > Page Settings > Footer Code
 ```html
+<script src="https://unpkg.com/split-type"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AngelinoBarajas/510-visuals@main/js/homepage.js"></script>
 ```
 
@@ -57,9 +44,13 @@ js/
 
 ## Cache Purging
 
-jsDelivr caches files. After pushing updates, purge the cache:
+After pushing updates, purge each file individually at:
 ```
-https://purge.jsdelivr.net/gh/AngelinoBarajas/510-visuals@main/css/global.css
+https://purge.jsdelivr.net/gh/AngelinoBarajas/510-visuals@main/css/FILENAME
+https://purge.jsdelivr.net/gh/AngelinoBarajas/510-visuals@main/js/FILENAME
 ```
 
-Or use versioned tags (`@v1.0`) instead of `@main` for production stability.
+## Notes
+- GSAP CDN must load BEFORE global.js
+- SplitType + Swiper must load BEFORE homepage.js
+- w-embed scripts inside Webflow Designer stay in Webflow (not in this repo)
