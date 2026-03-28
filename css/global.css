@@ -1,0 +1,268 @@
+/* 5TEN VISUALS — Global CSS (site-wide)
+   Loaded: Site Settings > Head
+   CDN: https://cdn.jsdelivr.net/gh/AngelinoBarajas/510-visuals@main/css/global.css */
+
+/* --- Rendering + layout safety --- */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -o-font-smoothing: antialiased;
+}
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+html,
+body {
+  overflow-x: hidden;
+}
+.heading-style-h1 span {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* --- Navbar base (hide/show) --- */
+.navbar1_component {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition:
+    transform 320ms ease,
+    opacity 240ms ease;
+  will-change: transform, opacity;
+}
+.navbar1_component.navbar--hidden {
+  transform: translate3d(0, -120%, 0) !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- Navbar mobile responsive --- */
+@media screen and (max-width: 991px) {
+  .navbar1_component {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    background: rgba(0, 0, 0, 0.85) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .navbar1_container {
+    padding: 0.75rem 1.25rem !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .navbar1_logo-link {
+    display: flex;
+    align-items: center;
+  }
+  .navbar1_logo {
+    height: 32px !important;
+    max-height: none !important;
+    width: auto !important;
+    max-width: 140px !important;
+    object-fit: contain !important;
+  }
+  .navbar1_menu-button {
+    padding: 6px !important;
+  }
+  .navbar1_menu-button .menu-icon1 {
+    transform: scale(0.85);
+  }
+}
+@media screen and (max-width: 767px) {
+  .navbar1_container {
+    padding: 0.35rem 1rem !important;
+  }
+  .navbar1_logo {
+    height: 22px !important;
+    max-width: 100px !important;
+  }
+  .navbar1_menu-button {
+    padding: 4px !important;
+  }
+  .navbar1_menu-button .menu-icon1 {
+    transform: scale(0.65);
+  }
+}
+@media screen and (max-width: 478px) {
+  .navbar1_container {
+    padding: 0.5rem 0.75rem !important;
+  }
+  .navbar1_logo {
+    height: 24px !important;
+    max-width: 100px !important;
+  }
+  .navbar1_menu-button .menu-icon1 {
+    transform: scale(0.75);
+  }
+}
+
+/* --- Preloader --- */
+.preloader {
+  display: flex;
+}
+
+/* --- Column transition overlay --- */
+.column-transition_component {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  isolation: isolate;
+  mix-blend-mode: normal;
+  opacity: 1;
+  visibility: visible;
+  transform: translateZ(0);
+  will-change: transform;
+}
+.column-transition_column {
+  height: 100%;
+  opacity: 1;
+  mix-blend-mode: normal;
+  background-color: #000;
+}
+
+/* --- Parallax overlap util --- */
+.parallax-effect {
+  position: relative;
+  z-index: 2;
+  margin-top: -6rem;
+}
+.parallax-effect.is-sm {
+  margin-top: -3rem;
+}
+.parallax-effect.is-lg {
+  margin-top: -9rem;
+}
+@media (max-width: 767px) {
+  .parallax-effect {
+    margin-top: -2.5rem;
+  }
+  .parallax-effect.is-lg {
+    margin-top: -4rem;
+  }
+}
+
+/* --- Lightbox z-index hardening --- */
+.w-lightbox-backdrop,
+.w-lightbox-container,
+.w-lightbox-frame {
+  z-index: 2147483646 !important;
+}
+.w-lightbox-close {
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+}
+.w-lightbox-backdrop {
+  pointer-events: auto !important;
+}
+
+/* --- CTA38 desktop link colors + numbering + hover preview --- */
+@media (min-width: 992px) {
+  .cta38_component .cta38_link-block {
+    color: #ffffff;
+    transition: color 220ms ease;
+  }
+  .cta38_component .cta38_link-block:hover {
+    color: #baccce;
+  }
+}
+.section_cta38 .w-dyn-items {
+  counter-reset: cta38-index;
+}
+.section_cta38 .w-dyn-item {
+  counter-increment: cta38-index;
+}
+.section_cta38 .cta38_link-text-small::before {
+  content: counter(cta38-index, decimal-leading-zero);
+  display: inline-block;
+}
+@media (min-width: 992px) {
+  .section_cta38 .w-dyn-list .cta38_link-block {
+    transition:
+      opacity 220ms ease,
+      color 220ms ease;
+  }
+  .section_cta38.is-dimming .w-dyn-list .cta38_link-block {
+    opacity: 0.28;
+  }
+  .section_cta38.is-dimming .w-dyn-list .cta38_link-block.is-active {
+    opacity: 1;
+  }
+  .section_cta38 .w-dyn-list .cta38_link-block {
+    position: relative;
+    z-index: 1;
+  }
+  .section_cta38 .w-dyn-list .cta38_link-block.is-active {
+    z-index: 3;
+  }
+  .section_cta38 .cta38_hover-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 270px;
+    height: 180px;
+    border-radius: 16px;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+    transform: translate3d(-9999px, -9999px, 0);
+    transition: opacity 180ms ease;
+  }
+  .section_cta38 .cta38_hover-preview.is-active {
+    opacity: 1;
+  }
+  .section_cta38 .cta38_hover-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transform: scale(1);
+    transform-origin: center center;
+    transition: transform 420ms ease;
+    will-change: transform;
+  }
+  .section_cta38 .cta38_hover-preview.is-active img {
+    transform: scale(1.5);
+  }
+  .section_cta38.is-dimming .w-dyn-list .cta38_link-block.is-active {
+    border-bottom-color: transparent;
+  }
+}
+
+/* --- CTA38 mobile link colors + padding --- */
+@media screen and (max-width: 991px) {
+  .cta38_component .cta38_link-block {
+    color: #ffffff;
+  }
+  .section_cta38 .cta38_link-text {
+    color: #ffffff !important;
+  }
+  .section_cta38 .cta38_link-text-small {
+    color: #ffffff !important;
+  }
+  .section_cta38 .padding-global {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+@media screen and (max-width: 478px) {
+  .section_cta38 .padding-global {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
