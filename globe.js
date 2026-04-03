@@ -220,8 +220,22 @@ decodeDots(DOTS_B64).then(function(LAND_DOTS){
   }
   loop();
 
-  // Resize — observe wrapper container
-  var ro=new ResizeObserver(function(){var w=wrapper.clientWidth,h=wrapper.clientHeight;if(w>0&&h>0){camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}});
+  // Resize — observe wrapper container with debounce
+  var resizeTimeout;
+  var ro=new ResizeObserver(function(){
+    clearTimeout(resizeTimeout);
+    resizeTimeout=setTimeout(function(){
+      var w=wrapper.clientWidth,h=wrapper.clientHeight;
+      if(w>0&&h>0){
+        camera.aspect=w/h;
+        camera.updateProjectionMatrix();
+        renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+        renderer.setSize(w,h);
+        canvas.style.width=w+'px';
+        canvas.style.height=h+'px';
+      }
+    },100);
+  });
   ro.observe(wrapper);
 
   // Initial rotation — face Americas
