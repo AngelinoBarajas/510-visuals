@@ -38,12 +38,13 @@
   line-height: 1.7;
 }
 
-/* Right globe column — circular crop */
+/* Right globe column — rounded frame */
 .globe_canvas-wrapper {
   position: relative;
   overflow: hidden;
   min-height: 500px;
-  border-radius: 50%;
+  border-radius: 8px;
+  border: 1px solid rgba(55,83,90,0.3);
 }
 .globe_canvas-wrapper canvas {
   display: block;
@@ -129,12 +130,12 @@
   .globe_component { grid-template-columns: 1fr; min-height: auto; }
   .globe_content { padding-right: 0; padding-bottom: 40px; text-align: center; }
   .globe_content .globe_description { margin-left: auto; margin-right: auto; }
-  .globe_canvas-wrapper { min-height: 400px; max-width: 450px; margin: 0 auto; }
+  .globe_canvas-wrapper { min-height: 400px; }
 }
 @media (max-width: 767px) {
-  .globe_canvas-wrapper { min-height: 350px; max-width: 380px; }
+  .globe_canvas-wrapper { min-height: 350px; }
 }
 @media (max-width: 478px) {
-  .globe_canvas-wrapper { min-height: 300px; max-width: 300px; }
+  .globe_canvas-wrapper { min-height: 300px; }
   .globe_description { font-size: 14px; }
 }
