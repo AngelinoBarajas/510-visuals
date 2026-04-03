@@ -227,10 +227,43 @@ decodeDots(DOTS_B64).then(function(LAND_DOTS){
   canvas.addEventListener('touchmove',function(e){e.preventDefault();if(dragging){velY=(e.touches[0].clientX-tX)*0.0008;velX=(e.touches[0].clientY-tY)*0.0008;tX=e.touches[0].clientX;tY=e.touches[0].clientY}},{passive:false});
   canvas.addEventListener('touchend',function(){dragging=false});
 
+  // Scroll zoom — min 2.2 (current/max out), max zoom in to 1.4
+  var zoomTarget=2.2;
+  var ZOOM_MIN=1.4,ZOOM_MAX=2.2;
+  canvas.addEventListener('wheel',function(e){
+    e.preventDefault();
+    zoomTarget+=e.deltaY*0.001;
+    zoomTarget=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,zoomTarget));
+  },{passive:false});
+
+  // Pinch zoom for touch
+  var lastPinchDist=0;
+  canvas.addEventListener('touchstart',function(e){
+    if(e.touches.length===2){
+      var dx=e.touches[0].clientX-e.touches[1].clientX;
+      var dy=e.touches[0].clientY-e.touches[1].clientY;
+      lastPinchDist=Math.sqrt(dx*dx+dy*dy);
+    }
+  },{passive:true});
+  canvas.addEventListener('touchmove',function(e){
+    if(e.touches.length===2){
+      var dx=e.touches[0].clientX-e.touches[1].clientX;
+      var dy=e.touches[0].clientY-e.touches[1].clientY;
+      var dist=Math.sqrt(dx*dx+dy*dy);
+      if(lastPinchDist>0){
+        zoomTarget+=(lastPinchDist-dist)*0.005;
+        zoomTarget=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,zoomTarget));
+      }
+      lastPinchDist=dist;
+    }
+  },{passive:true});
+
   // Animate
   var t=0;
   function loop(){
     requestAnimationFrame(loop);t+=0.016;
+    // Smooth zoom
+    camera.position.z+=(zoomTarget-camera.position.z)*0.08;
     if(!dragging&&!hoveringPin){globeGroup.rotation.y+=0.00025;velX*=0.96;velY*=0.96}
     globeGroup.rotation.y+=velY;globeGroup.rotation.x=Math.max(-0.7,Math.min(0.7,globeGroup.rotation.x+velX));
     arcs.forEach(function(a){
