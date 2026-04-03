@@ -98,7 +98,7 @@ decodeDots(DOTS_B64).then(function(LAND_DOTS){
   })));
 
   // Dark core
-  globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(R*0.994,64,64),new THREE.MeshPhongMaterial({color:0x151b1f,transparent:true,opacity:0.95,shininess:3})));
+  globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(R*0.994,64,64),new THREE.MeshBasicMaterial({color:0x1c2227})));
 
   function ll2v(lat,lng,r){var phi=(90-lat)*Math.PI/180,theta=(lng+180)*Math.PI/180;return new THREE.Vector3(-r*Math.sin(phi)*Math.cos(theta),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(theta))}
 
