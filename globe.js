@@ -75,10 +75,9 @@ decodeDots(DOTS_B64).then(function(LAND_DOTS){
   var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.setSize(W,H);
-  renderer.setClearColor(PAL.dark,1);
+  renderer.setClearColor(0x000000,0);
 
   var scene=new THREE.Scene();
-  scene.fog=new THREE.FogExp2(PAL.dark,0.08);
   var camera=new THREE.PerspectiveCamera(45,W/H,0.1,1000);
   camera.position.set(0,0.4,2.2);
 
@@ -92,10 +91,10 @@ decodeDots(DOTS_B64).then(function(LAND_DOTS){
   var R=1;
 
   // Atmosphere
-  globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(R*1.18,64,64),new THREE.ShaderMaterial({
+  globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(R*1.12,64,64),new THREE.ShaderMaterial({
     vertexShader:'varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader:'varying vec3 vN;void main(){float i=pow(0.62-dot(vN,vec3(0,0,1)),2.8);gl_FragColor=vec4(0.345,0.525,0.58,1.)*i*0.45;}',
-    blending:THREE.AdditiveBlending,side:THREE.BackSide,transparent:true
+    fragmentShader:'varying vec3 vN;void main(){float d=dot(vN,vec3(0,0,1));float i=pow(0.5-d,4.0)*0.3;if(i<0.01)discard;gl_FragColor=vec4(0.345,0.525,0.58,i);}',
+    blending:THREE.AdditiveBlending,side:THREE.BackSide,transparent:true,depthWrite:false
   })));
 
   // Dark core
