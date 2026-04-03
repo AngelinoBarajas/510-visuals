@@ -1,0 +1,140 @@
+/* ============================================
+   510 VISUALS — Globe Section Component
+   Target: .section_globe, #globe-preview
+   Dependencies: None (self-contained)
+   Safe to remove: Yes — delete this + globe.js
+   Changed: 2026-04-02 — Initial build
+   ============================================ */
+
+/* Section */
+.section_globe { background-color: #1c2227; overflow: visible; position: relative; }
+
+/* Two-column grid */
+.globe_component {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  align-items: center;
+  min-height: 600px;
+}
+
+/* Left copy column */
+.globe_content { padding-right: 48px; }
+.globe_eyebrow {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  color: rgba(184,201,204,0.45);
+  margin-bottom: 12px;
+}
+.globe_heading {
+  color: #d0e0e3;
+  margin-bottom: 20px;
+}
+.globe_description {
+  color: rgba(184,201,204,0.6);
+  margin-bottom: 32px;
+  max-width: 480px;
+  line-height: 1.7;
+}
+
+/* Right globe column — circular crop */
+.globe_canvas-wrapper {
+  position: relative;
+  overflow: hidden;
+  min-height: 500px;
+  border-radius: 50%;
+}
+.globe_canvas-wrapper canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  cursor: grab;
+}
+.globe_canvas-wrapper canvas:active { cursor: grabbing; }
+
+/* Hidden CMS data source */
+.globe_cms-data { display: none !important; }
+
+/* ── Preview Card (body-level, fixed) ── */
+#globe-preview {
+  position: fixed;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+  transform: translateY(8px);
+  z-index: 9999;
+  width: 240px;
+  background: rgba(20,26,30,0.97);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(55,83,90,0.3);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  pointer-events: auto;
+}
+#globe-preview.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+#globe-preview .gp-img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  display: block;
+  border-bottom: 1px solid rgba(55,83,90,0.15);
+}
+#globe-preview .gp-body { padding: 12px 14px 14px; }
+#globe-preview .gp-loc {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: rgba(184,201,204,0.4);
+  margin-bottom: 5px;
+}
+#globe-preview .gp-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #d0e0e3;
+  line-height: 1.35;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+#globe-preview .gp-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #5a8a94;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+#globe-preview .gp-cta:hover { color: #b8c9cc; }
+#globe-preview .gp-cta svg {
+  width: 10px;
+  height: 10px;
+  transition: transform 0.2s;
+}
+#globe-preview .gp-cta:hover svg { transform: translateX(3px); }
+
+/* ── Responsive ── */
+@media (max-width: 991px) {
+  .globe_component { grid-template-columns: 1fr; min-height: auto; }
+  .globe_content { padding-right: 0; padding-bottom: 40px; text-align: center; }
+  .globe_content .globe_description { margin-left: auto; margin-right: auto; }
+  .globe_canvas-wrapper { min-height: 400px; max-width: 450px; margin: 0 auto; }
+}
+@media (max-width: 767px) {
+  .globe_canvas-wrapper { min-height: 350px; max-width: 380px; }
+}
+@media (max-width: 478px) {
+  .globe_canvas-wrapper { min-height: 300px; max-width: 300px; }
+  .globe_description { font-size: 14px; }
+}
