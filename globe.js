@@ -230,11 +230,14 @@ decodeDots(DOTS_B64).then(function(LAND_DOTS){
   // Scroll zoom — min 2.2 (current/max out), max zoom in to 1.4
   var zoomTarget=2.2;
   var ZOOM_MIN=1.4,ZOOM_MAX=2.2;
-  canvas.addEventListener('wheel',function(e){
+  function onWheel(e){
     e.preventDefault();
+    e.stopPropagation();
     zoomTarget+=e.deltaY*0.001;
     zoomTarget=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,zoomTarget));
-  },{passive:false});
+  }
+  wrapper.addEventListener('wheel',onWheel,{passive:false});
+  canvas.addEventListener('wheel',onWheel,{passive:false});
 
   // Pinch zoom for touch
   var lastPinchDist=0;
