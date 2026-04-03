@@ -32,6 +32,14 @@ if(!document.getElementById('globe-preview')){
 var canvas=document.createElement('canvas');
 wrapper.appendChild(canvas);
 
+// Interaction hint
+var hint=document.createElement('div');
+hint.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;margin-right:6px;vertical-align:middle"><path d="M12 2v8M8 6l4-4 4 4"/><circle cx="12" cy="18" r="4"/><path d="M12 14v-1"/></svg>Drag to rotate &middot; Scroll to zoom';
+hint.style.cssText='position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:1px;color:rgba(184,201,204,0.35);z-index:3;pointer-events:none;transition:opacity 0.6s ease;white-space:nowrap';
+wrapper.appendChild(hint);
+var hintDismissed=false;
+function dismissHint(){if(!hintDismissed){hintDismissed=true;hint.style.opacity='0';setTimeout(function(){hint.remove()},800)}}
+
 // Decode base64 continent dots (binary int16 pairs)
 function decodeDots(b64){
   var bin=atob(b64);
@@ -214,7 +222,7 @@ decodeDots(DOTS_B64).then(function(LAND_DOTS){
     if(hits.length){var p=hits[0].object.userData;cancelDismiss();hoveringPin=true;if(hoveredProj&&hoveredProj!==p)hidePreview();if(hoveredProj!==p)showPreview(p,e.clientX,e.clientY);canvas.style.cursor='pointer'}
     else{if(hoveredProj&&!mouseOnCard&&!dismissTimer)startDismiss();canvas.style.cursor='grab'}
   });
-  canvas.addEventListener('mousedown',function(e){dragging=true;dragX=e.clientX;dragY=e.clientY;canvas.style.cursor='grabbing'});
+  canvas.addEventListener('mousedown',function(e){dragging=true;dragX=e.clientX;dragY=e.clientY;canvas.style.cursor='grabbing';dismissHint()});
   canvas.addEventListener('mouseup',function(){dragging=false;canvas.style.cursor='grab'});
   canvas.addEventListener('mouseleave',function(){dragging=false;if(!mouseOnCard)startDismiss()});
 
@@ -223,7 +231,7 @@ decodeDots(DOTS_B64).then(function(LAND_DOTS){
 
   // Touch
   var tX=0,tY=0;
-  canvas.addEventListener('touchstart',function(e){e.preventDefault();dragging=true;tX=e.touches[0].clientX;tY=e.touches[0].clientY},{passive:false});
+  canvas.addEventListener('touchstart',function(e){e.preventDefault();dragging=true;tX=e.touches[0].clientX;tY=e.touches[0].clientY;dismissHint()},{passive:false});
   canvas.addEventListener('touchmove',function(e){e.preventDefault();if(dragging){velY=(e.touches[0].clientX-tX)*0.0008;velX=(e.touches[0].clientY-tY)*0.0008;tX=e.touches[0].clientX;tY=e.touches[0].clientY}},{passive:false});
   canvas.addEventListener('touchend',function(){dragging=false});
 
@@ -235,6 +243,7 @@ decodeDots(DOTS_B64).then(function(LAND_DOTS){
     e.stopPropagation();
     zoomTarget+=e.deltaY*0.001;
     zoomTarget=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,zoomTarget));
+    dismissHint();
   }
   wrapper.addEventListener('wheel',onWheel,{passive:false});
   canvas.addEventListener('wheel',onWheel,{passive:false});
