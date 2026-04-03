@@ -134,6 +134,11 @@ decodeDots(DOTS_B64).then(function(LAND_DOTS){
     var ring=new THREE.Mesh(new THREE.RingGeometry(ri,ro,32),new THREE.MeshBasicMaterial({color:isHQ?0xd0e0e3:isHero?0x8aacb2:0x5a8a94,transparent:true,opacity:isHQ?0.5:0.35,side:THREE.DoubleSide}));
     ring.position.copy(pos);ring.lookAt(pos.clone().multiplyScalar(2));pinGroup.add(ring);
 
+    // Glow halo sphere behind every pin
+    var glowR=isHQ?0.04:isHero?0.035:0.025;
+    var glow=new THREE.Mesh(new THREE.SphereGeometry(glowR,16,16),new THREE.MeshBasicMaterial({color:isHQ?0xd0e0e3:isHero?0xb8c9cc:0x8aacb2,transparent:true,opacity:0.15}));
+    glow.position.copy(pos);glow.userData={isGlow:true,baseR:glowR};pinGroup.add(glow);
+
     // Spotlight beam shooting outward from pin
     var beamDir=pos.clone().normalize();
     var beamLen=isHQ?0.12:isHero?0.1:0.07;
@@ -148,8 +153,10 @@ decodeDots(DOTS_B64).then(function(LAND_DOTS){
     tipDot.position.copy(beamEnd);
     pinGroup.add(tipDot);
 
-    // Pulse ring for HQ and hero
-    if(isHQ||isHero){var po=ro+0.005,pi2=po+0.003;var pulse=new THREE.Mesh(new THREE.RingGeometry(po,pi2,32),new THREE.MeshBasicMaterial({color:isHQ?0xd0e0e3:0x8aacb2,transparent:true,opacity:0.2,side:THREE.DoubleSide}));pulse.position.copy(pos);pulse.lookAt(pos.clone().multiplyScalar(2));pulse.userData={isPulse:true};pinGroup.add(pulse);pulseRings.push(pulse)}
+    // Pulse ring — ALL pins get one now
+    var po=ro+0.005,pi2=po+(isHQ?0.004:0.003);
+    var pulse=new THREE.Mesh(new THREE.RingGeometry(po,pi2,32),new THREE.MeshBasicMaterial({color:isHQ?0xd0e0e3:isHero?0x8aacb2:0x6a9aa2,transparent:true,opacity:0.2,side:THREE.DoubleSide}));
+    pulse.position.copy(pos);pulse.lookAt(pos.clone().multiplyScalar(2));pulse.userData={isPulse:true};pinGroup.add(pulse);pulseRings.push(pulse);
   }
   createPin(BROOKLYN,-1);createPin(SHENZHEN,-2);
   CMS_PROJECTS.forEach(function(p,i){createPin(p,i)});
@@ -237,10 +244,11 @@ decodeDots(DOTS_B64).then(function(LAND_DOTS){
       a.line.material.opacity=a.progress<1?bOp:Math.max(0,bOp-(a.progress-1)*1.2);
       a.glowLine.material.opacity=a.progress<1?glowOp:Math.max(0,glowOp-(a.progress-1)*1.2);
     });
-    pulseRings.forEach(function(p){var s=1+Math.sin(t*1.8)*0.4;p.scale.set(s,s,1);p.material.opacity=0.12+Math.sin(t*1.8)*0.08});
+    pulseRings.forEach(function(p){var s=1+Math.sin(t*1.5)*0.6;p.scale.set(s,s,1);p.material.opacity=0.1+Math.sin(t*1.5)*0.15});
     pinGroup.children.forEach(function(child){
-      if(child.geometry&&child.geometry.type==='CircleGeometry'){var pulse=0.7+Math.sin(t*1.2+child.position.x*5)*0.3;child.material.opacity=pulse}
-      if(child.geometry&&child.geometry.type==='RingGeometry'&&!child.userData.isPulse){var pulse=0.2+Math.sin(t*1.5+child.position.y*4)*0.15;child.material.opacity=pulse}
+      if(child.geometry&&child.geometry.type==='CircleGeometry'){var pulse=0.6+Math.sin(t*1.0+child.position.x*5)*0.4;child.material.opacity=pulse}
+      if(child.geometry&&child.geometry.type==='RingGeometry'&&!child.userData.isPulse){var pulse=0.15+Math.sin(t*1.2+child.position.y*4)*0.25;child.material.opacity=pulse}
+      if(child.userData&&child.userData.isGlow){var pulse=0.08+Math.sin(t*1.0+child.position.z*6)*0.12;child.material.opacity=pulse;var gs=1+Math.sin(t*0.8+child.position.x*3)*0.3;child.scale.set(gs,gs,gs)}
     });
     renderer.render(scene,camera);
   }
