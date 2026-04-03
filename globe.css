@@ -9,13 +9,16 @@
 /* Section */
 .section_globe { background-color: #1c2227; overflow: visible; position: relative; }
 
-/* Two-column grid */
+/* Two-column grid — framed card */
 .globe_component {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0;
   align-items: center;
   min-height: 600px;
+  border-radius: 8px;
+  border: 1px solid rgba(55,83,90,0.3);
+  overflow: hidden;
 }
 
 /* Left copy column */
@@ -38,13 +41,11 @@
   line-height: 1.7;
 }
 
-/* Right globe column — rounded frame */
+/* Right globe column */
 .globe_canvas-wrapper {
   position: relative;
   overflow: hidden;
   min-height: 500px;
-  border-radius: 8px;
-  border: 1px solid rgba(55,83,90,0.3);
 }
 .globe_canvas-wrapper canvas {
   display: block;
