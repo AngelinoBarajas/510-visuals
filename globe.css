@@ -140,3 +140,6 @@
   .globe_canvas-wrapper { min-height: 300px; }
   .globe_description { font-size: 14px; }
 }
+/* ── Globe Hero canvas cursor (mirrors compact) ── */
+.globe-hero_canvas-wrapper canvas { cursor: grab; }
+.globe-hero_canvas-wrapper canvas:active { cursor: grabbing; }
