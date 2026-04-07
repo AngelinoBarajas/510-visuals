@@ -298,10 +298,10 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
 
     // Scroll zoom
     var zoomTarget = startZ;
-    var ZOOM_MIN = isHero ? 1.6 : 1.4, ZOOM_MAX = startZ;
-    function onWheel(e) { e.preventDefault(); e.stopPropagation(); zoomTarget += e.deltaY * 0.001; zoomTarget = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomTarget)); dismissHint(); }
-    wrapper.addEventListener('wheel', onWheel, { passive: false });
-    canvas.addEventListener('wheel', onWheel, { passive: false });
+var ZOOM_MIN = isHero ? 1.6 : 1.4, ZOOM_MAX = startZ;
+function onWheel(e) { if (!dragging && canvas.style.cursor !== 'pointer') return; e.preventDefault(); e.stopPropagation(); zoomTarget += e.deltaY * 0.001; zoomTarget = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomTarget)); dismissHint(); }
+wrapper.addEventListener('wheel', onWheel, { passive: false });
+canvas.addEventListener('wheel', onWheel, { passive: false });
 
     // Pinch zoom
     var lastPinchDist = 0;
