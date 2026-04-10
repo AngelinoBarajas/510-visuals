@@ -293,7 +293,7 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
     // Touch
     var tX = 0, tY = 0;
     canvas.addEventListener('touchstart', function (e) { e.preventDefault(); dragging = true; tX = e.touches[0].clientX; tY = e.touches[0].clientY; dismissHint(); }, { passive: false });
-    canvas.addEventListener('touchmove', function (e) { e.preventDefault(); if (dragging) { velY = (e.touches[0].clientX - tX) * 0.0008; velX = (e.touches[0].clientY - tY) * 0.0008; tX = e.touches[0].clientX; tY = e.touches[0].clientY; } }, { passive: false });
+    canvas.addEventListener('touchmove', function (e) { e.preventDefault(); if (dragging) { velY = (e.touches[0].clientX - tX) * 0.003; velX = (e.touches[0].clientY - tY) * 0.003; tX = e.touches[0].clientX; tY = e.touches[0].clientY; } }, { passive: false });
     canvas.addEventListener('touchend', function () { dragging = false; });
 
     // Scroll zoom
