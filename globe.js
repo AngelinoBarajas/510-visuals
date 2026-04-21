@@ -31,11 +31,34 @@ function initGlobes() {
       document.body.appendChild(d.firstChild);
     }
 
+    // Inject shared 5TEN popup card once
+    if (!document.getElementById('globe-510-preview')) {
+      var arrowSvg = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5h8M6 2l3 3-3 3"/></svg>';
+      var pv510HTML = '<div id="globe-510-preview"><div class="gp510-body"><div class="gp510-loc"></div><div class="gp510-title">5TEN VISUALS</div><div class="gp510-actions"><a class="gp510-cta" href="/contact">Contact' + arrowSvg + '</a><a class="gp510-cta" href="/about">About' + arrowSvg + '</a></div></div></div>';
+      var d2 = document.createElement('div');
+      d2.innerHTML = pv510HTML;
+      document.body.appendChild(d2.firstChild);
+    }
+
     // Inject shared 5TEN badge styles once
     if (!document.getElementById('globe-badge-styles')) {
       var bs = document.createElement('style');
       bs.id = 'globe-badge-styles';
-      bs.textContent = '.globe_510-badge{position:absolute;top:0;left:0;pointer-events:none;height:22px;z-index:5;opacity:0;transform:translate(-50%,-50%) scale(var(--gb-s,1));transition:opacity 180ms ease-out;will-change:transform,left,top,opacity}.globe_510-badge.is-hero{height:34px}.globe_510-badge img{height:100%;width:100%;display:block;object-fit:contain;filter:drop-shadow(0 0 8px rgba(234,255,0,0.85)) drop-shadow(0 0 2px rgba(234,255,0,1))}.globe_510-badge span{display:flex;align-items:center;justify-content:center;height:100%;padding:0 6px;color:#eaff00;font-weight:700;font-size:11px;letter-spacing:0.05em;text-shadow:0 0 8px rgba(234,255,0,0.75)}';
+      bs.textContent = [
+        '.globe_510-badge{display:inline-flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;pointer-events:none;cursor:pointer;height:32px;padding:4px 10px;box-sizing:border-box;background:rgba(28,34,39,0.82);border:1px solid rgba(55,83,90,0.55);border-radius:6px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:5;opacity:0;transform:translate(-50%,-50%) scale(var(--gb-s,1));transition:opacity 180ms ease-out,background 200ms ease,border-color 200ms ease;will-change:transform,left,top,opacity}',
+        '.globe_510-badge.is-hero{height:42px;padding:6px 14px}',
+        '.globe_510-badge:hover{background:rgba(90,138,148,0.45);border-color:rgba(234,255,0,0.55)}',
+        '.globe_510-badge img{height:100%;width:auto;display:block;object-fit:contain;filter:drop-shadow(0 0 6px rgba(234,255,0,0.7))}',
+        '.globe_510-badge span{display:flex;align-items:center;justify-content:center;color:#eaff00;font-weight:700;font-size:12px;letter-spacing:0.08em;text-shadow:0 0 8px rgba(234,255,0,0.75)}',
+        '#globe-510-preview{position:fixed;z-index:2147483647;pointer-events:none;opacity:0;transform:translate(-50%,-100%) translateY(-8px);transition:opacity 180ms ease,transform 180ms ease;min-width:220px;padding:14px 16px;background:rgba(28,34,39,0.96);border:1px solid rgba(55,83,90,0.55);border-radius:8px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 12px 40px rgba(0,0,0,0.55),0 0 0 1px rgba(234,255,0,0.08)}',
+        '#globe-510-preview.is-visible{opacity:1;pointer-events:auto;transform:translate(-50%,-100%) translateY(-14px)}',
+        '#globe-510-preview .gp510-loc{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:rgba(234,255,0,0.85);margin-bottom:4px;font-weight:600}',
+        '#globe-510-preview .gp510-title{font-size:14px;color:#d0e0e3;font-weight:600;margin-bottom:12px;letter-spacing:0.02em}',
+        '#globe-510-preview .gp510-actions{display:flex;gap:8px}',
+        '#globe-510-preview .gp510-cta{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#d0e0e3;background:rgba(55,83,90,0.35);border:1px solid rgba(55,83,90,0.5);border-radius:6px;text-decoration:none;transition:all 0.2s ease}',
+        '#globe-510-preview .gp510-cta:hover{background:rgba(90,138,148,0.45);border-color:rgba(234,255,0,0.55);color:#fff}',
+        '#globe-510-preview .gp510-cta svg{width:10px;height:10px;flex-shrink:0}'
+      ].join('');
       document.head.appendChild(bs);
     }
 
@@ -235,30 +258,42 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
     var navLogo = document.querySelector('.navbar_logo-image, .navbar_logo-link img, .navbar_logo img, .navbar_logo');
     var logoSrc = navLogo ? (navLogo.getAttribute('src') || navLogo.getAttribute('data-src') || '') : '';
     var badges = [];
-    var BADGE_H = isHero ? 34 : 22;
+    var preview510 = document.getElementById('globe-510-preview');
+    var pv510Timer = null;
+    function show510(loc, rect) {
+      if (!preview510) return;
+      clearTimeout(pv510Timer);
+      var locEl = preview510.querySelector('.gp510-loc');
+      if (locEl) locEl.textContent = (loc.city + (loc.region ? ', ' + loc.region : '')).toUpperCase();
+      preview510.style.left = (rect.left + rect.width / 2) + 'px';
+      preview510.style.top = rect.top + 'px';
+      preview510.classList.add('is-visible');
+    }
+    function hide510() {
+      clearTimeout(pv510Timer);
+      pv510Timer = setTimeout(function () {
+        preview510 && preview510.classList.remove('is-visible');
+      }, 200);
+    }
+    if (preview510 && !preview510.__ten510Bound) {
+      preview510.__ten510Bound = true;
+      preview510.addEventListener('mouseenter', function () { clearTimeout(pv510Timer); preview510.classList.add('is-visible'); });
+      preview510.addEventListener('mouseleave', hide510);
+    }
     function makeBadge(loc) {
       var b = document.createElement('div');
       b.className = 'globe_510-badge' + (isHero ? ' is-hero' : '');
       if (logoSrc) {
         var img = document.createElement('img');
         img.alt = '5TEN';
-        img.addEventListener('load', function () {
-          var nw = img.naturalWidth, nh = img.naturalHeight;
-          if (nw > 0 && nh > 0) {
-            b.style.width = (BADGE_H * (nw / nh)) + 'px';
-          } else {
-            b.style.width = (BADGE_H * 3.4) + 'px'; // fallback aspect for 5TEN logo
-          }
-        });
-        img.addEventListener('error', function () {
-          b.innerHTML = '<span>510</span>';
-          b.style.width = 'auto';
-        });
+        img.addEventListener('error', function () { b.innerHTML = '<span>510</span>'; });
         img.src = logoSrc;
         b.appendChild(img);
       } else {
         b.innerHTML = '<span>510</span>';
       }
+      b.addEventListener('mouseenter', function () { show510(loc, b.getBoundingClientRect()); });
+      b.addEventListener('mouseleave', hide510);
       wrapper.appendChild(b);
       badges.push({ el: b, loc: loc });
     }
@@ -398,6 +433,7 @@ canvas.addEventListener('wheel', onWheel, { passive: false });
           var facing = world.clone().normalize().dot(camDir);
           var opacity = facing > 0.22 ? 1 : Math.max(0, (facing - 0.05) / 0.17);
           bd.el.style.opacity = opacity;
+          bd.el.style.pointerEvents = opacity >= 0.95 ? 'auto' : 'none';
           if (opacity <= 0) return; // skip position math when hidden
           var proj = world.clone().project(camera);
           var sx = (proj.x * 0.5 + 0.5) * wW;
