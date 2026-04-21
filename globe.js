@@ -327,8 +327,13 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
         var img = document.createElement('img');
         img.alt = '5TEN';
         img.addEventListener('load', function () {
-          if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-            img.style.aspectRatio = img.naturalWidth + ' / ' + img.naturalHeight;
+          var nw = img.naturalWidth, nh = img.naturalHeight;
+          if (nw > 0 && nh > 0) {
+            var frameH = isHero ? 90 : 66;
+            var contentH = frameH - 2 - 2; // border 1px + padding 1px on each side
+            img.style.setProperty('height', contentH + 'px', 'important');
+            img.style.setProperty('width', (contentH * (nw / nh)) + 'px', 'important');
+            img.style.aspectRatio = nw + ' / ' + nh;
           }
         });
         img.addEventListener('error', function () { b.innerHTML = '<span>510</span>'; });
