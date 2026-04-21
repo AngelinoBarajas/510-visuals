@@ -70,7 +70,13 @@ function initGlobes() {
         '#globe-preview .gp-cluster-thumb{width:36px;height:36px;border-radius:4px;background:rgba(55,83,90,0.3);flex-shrink:0}',
         '#globe-preview .gp-cluster-item .gp-cluster-title{flex:1;font-size:12px;font-weight:500;line-height:1.3;color:#d0e0e3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
         '#globe-preview .gp-cluster-item svg{width:10px;height:10px;color:#5a8a94;flex-shrink:0;transition:transform .2s,color .2s}',
-        '#globe-preview .gp-cluster-item:hover svg{color:#b8c9cc;transform:translateX(3px)}'
+        '#globe-preview .gp-cluster-item:hover svg{color:#b8c9cc;transform:translateX(3px)}',
+        '@media (max-width:600px){',
+        '#globe-preview{width:auto !important;max-width:calc(100vw - 24px) !important;min-width:260px}',
+        '#globe-510-preview{min-width:0;width:auto;max-width:calc(100vw - 24px)}',
+        '.globe_510-badge{height:44px;padding:8px 14px}',
+        '.globe_510-badge.is-hero{height:52px;padding:8px 16px}',
+        '}'
       ].join('');
       document.head.appendChild(bs);
     }
@@ -321,9 +327,25 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       clearTimeout(pv510Timer);
       var locEl = preview510.querySelector('.gp510-loc');
       if (locEl) locEl.textContent = (loc.city + (loc.region ? ', ' + loc.region : '')).toUpperCase();
-      preview510.style.left = (rect.left + rect.width / 2) + 'px';
-      preview510.style.top = rect.top + 'px';
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top;
+      preview510.style.left = cx + 'px';
+      preview510.style.top = cy + 'px';
       preview510.classList.add('is-visible');
+      // Measure resolved bounds (popup uses translate(-50%,-100%) translateY(-14px)) and nudge into viewport
+      requestAnimationFrame(function () {
+        var pad = 12;
+        var pvW = preview510.offsetWidth, pvH = preview510.offsetHeight;
+        var renderL = cx - pvW / 2, renderR = cx + pvW / 2, renderT = cy - pvH - 14;
+        var adjX = 0, adjY = 0;
+        if (renderL < pad) adjX = pad - renderL;
+        else if (renderR > innerWidth - pad) adjX = (innerWidth - pad) - renderR;
+        if (renderT < pad) adjY = pad - renderT;
+        if (adjX || adjY) {
+          preview510.style.left = (cx + adjX) + 'px';
+          preview510.style.top = (cy + adjY) + 'px';
+        }
+      });
     }
     function hide510() {
       clearTimeout(pv510Timer);
@@ -335,6 +357,14 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       preview510.__ten510Bound = true;
       preview510.addEventListener('mouseenter', function () { clearTimeout(pv510Timer); preview510.classList.add('is-visible'); });
       preview510.addEventListener('mouseleave', hide510);
+      // Tap/click outside dismisses (mobile + desktop)
+      document.addEventListener('click', function (e) {
+        if (preview510.classList.contains('is-visible') &&
+            !e.target.closest('.globe_510-badge') &&
+            !e.target.closest('#globe-510-preview')) {
+          hide510();
+        }
+      });
     }
     function makeBadge(loc) {
       var b = document.createElement('div');
@@ -344,11 +374,16 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
         img.alt = '5TEN';
         var applyImgDims = function () {
           var nw = img.naturalWidth, nh = img.naturalHeight;
-          if (nw > 0 && nh > 0) {
-            var frameH = isHero ? 64 : 52;
-            var contentH = frameH - 2 - 20; // 1px border each side + 10px padding each side
-            img.style.setProperty('height', contentH + 'px', 'important');
-            img.style.setProperty('width', (contentH * (nw / nh)) + 'px', 'important');
+          if (nw <= 0 || nh <= 0) return;
+          var frameH = b.offsetHeight;
+          if (frameH <= 0) return;
+          var contentH = frameH - 2 - 20; // 1px border each side + 10px padding each side
+          if (contentH <= 0) return;
+          var newH = contentH + 'px';
+          var newW = (contentH * (nw / nh)) + 'px';
+          if (img.style.height !== newH || img.style.width !== newW) {
+            img.style.setProperty('height', newH, 'important');
+            img.style.setProperty('width', newW, 'important');
             img.style.setProperty('max-width', 'none', 'important');
             img.style.aspectRatio = nw + ' / ' + nh;
           }
@@ -357,13 +392,19 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
         img.addEventListener('error', function () { b.innerHTML = '<span>510</span>'; });
         img.src = logoSrc;
         b.appendChild(img);
-        // Handle cached-image case: load event fires before listener attaches
         if (img.complete && img.naturalWidth > 0) applyImgDims();
+        // Recompute on viewport change so media-query frame-height shifts stay in sync
+        window.addEventListener('resize', applyImgDims);
       } else {
         b.innerHTML = '<span>510</span>';
       }
       b.addEventListener('mouseenter', function () { show510(loc, b.getBoundingClientRect()); });
       b.addEventListener('mouseleave', hide510);
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (preview510 && preview510.classList.contains('is-visible')) hide510();
+        else show510(loc, b.getBoundingClientRect());
+      });
       wrapper.appendChild(b);
       var line = document.createElementNS(SVG_NS, 'polyline');
       line.setAttribute('class', 'globe_510-leader-line');
@@ -437,10 +478,15 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       } else {
         preview.classList.remove('is-cluster');
       }
+      var pad = 12;
+      var pvW = preview.offsetWidth || 240;
+      var pvH = preview.offsetHeight || 280;
       var l = sx + 20, t = sy - 80;
-      if (l + 260 > innerWidth) l = sx - 260;
-      if (t < 10) t = 10;
-      if (t + 280 > innerHeight) t = innerHeight - 290;
+      if (l + pvW > innerWidth - pad) l = sx - pvW - 20;
+      if (l < pad) l = pad;
+      if (l + pvW > innerWidth - pad) l = innerWidth - pvW - pad; // fallback clamp
+      if (t + pvH > innerHeight - pad) t = innerHeight - pvH - pad;
+      if (t < pad) t = pad;
       preview.style.left = l + 'px'; preview.style.top = t + 'px';
       preview.classList.add('is-visible'); hoveredProj = proj;
     }
@@ -476,11 +522,42 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
     preview.addEventListener('mouseenter', function () { mouseOnCard = true; cancelDismiss(); hoveringPin = true; });
     preview.addEventListener('mouseleave', function () { mouseOnCard = false; startDismiss(); });
 
-    // Touch
-    var tX = 0, tY = 0;
-    canvas.addEventListener('touchstart', function (e) { e.preventDefault(); dragging = true; tX = e.touches[0].clientX; tY = e.touches[0].clientY; dismissHint(); }, { passive: false });
-    canvas.addEventListener('touchmove', function (e) { e.preventDefault(); if (dragging) { velY = (e.touches[0].clientX - tX) * 0.003; velX = (e.touches[0].clientY - tY) * 0.003; tX = e.touches[0].clientX; tY = e.touches[0].clientY; } }, { passive: false });
-    canvas.addEventListener('touchend', function () { dragging = false; });
+    // Touch — drag + tap-to-reveal pin preview
+    var tX = 0, tY = 0, tStartX = 0, tStartY = 0, tStartTime = 0, tMoved = false;
+    canvas.addEventListener('touchstart', function (e) {
+      e.preventDefault();
+      dragging = true;
+      tX = e.touches[0].clientX; tY = e.touches[0].clientY;
+      tStartX = tX; tStartY = tY; tStartTime = Date.now(); tMoved = false;
+      dismissHint();
+    }, { passive: false });
+    canvas.addEventListener('touchmove', function (e) {
+      e.preventDefault();
+      if (dragging) {
+        velY = (e.touches[0].clientX - tX) * 0.003;
+        velX = (e.touches[0].clientY - tY) * 0.003;
+        tX = e.touches[0].clientX; tY = e.touches[0].clientY;
+        if (Math.abs(tX - tStartX) > 6 || Math.abs(tY - tStartY) > 6) tMoved = true;
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchend', function (e) {
+      dragging = false;
+      if (!tMoved && (Date.now() - tStartTime) < 300 && e.changedTouches.length === 1) {
+        var lt = e.changedTouches[0];
+        var rect = canvas.getBoundingClientRect();
+        mouse.x = ((lt.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((lt.clientY - rect.top) / rect.height) * 2 + 1;
+        ray.setFromCamera(mouse, camera);
+        var hits = ray.intersectObjects(pinMeshes);
+        if (hits.length) {
+          cancelDismiss();
+          hoveringPin = true;
+          showPreview(hits[0].object.userData, lt.clientX, lt.clientY);
+        } else if (hoveredProj) {
+          dismissPreview();
+        }
+      }
+    });
 
     // Scroll zoom
     var zoomTarget = startZ;
@@ -545,8 +622,10 @@ canvas.addEventListener('wheel', onWheel, { passive: false });
           var proj = world.clone().project(camera);
           var px = (proj.x * 0.5 + 0.5) * wW;  // pin screen pos
           var py = (-proj.y * 0.5 + 0.5) * wH;
-          var ox = (bd.loc.offset && bd.loc.offset.x) || 0;
-          var oy = (bd.loc.offset && bd.loc.offset.y) || 0;
+          // Scale badge offset down on narrow wrappers so it doesn't clip off the edge
+          var offsetScale = wW < 480 ? 0.5 : (wW < 768 ? 0.75 : 1);
+          var ox = ((bd.loc.offset && bd.loc.offset.x) || 0) * offsetScale;
+          var oy = ((bd.loc.offset && bd.loc.offset.y) || 0) * offsetScale;
           var bx = px + ox, by = py + oy;       // badge center
           var scale = Math.max(0.6, 1 - proj.z * 0.3);
           bd.el.style.left = bx + 'px';
