@@ -31,6 +31,14 @@ function initGlobes() {
       document.body.appendChild(d.firstChild);
     }
 
+    // Inject shared 5TEN badge styles once
+    if (!document.getElementById('globe-badge-styles')) {
+      var bs = document.createElement('style');
+      bs.id = 'globe-badge-styles';
+      bs.textContent = '.globe_510-badge{position:absolute;top:0;left:0;pointer-events:none;width:22px;height:22px;z-index:5;transform:translate(-50%,-50%) scale(var(--gb-s,1));will-change:transform,left,top}.globe_510-badge.is-hero{width:34px;height:34px}.globe_510-badge img{width:100%;height:100%;display:block;filter:drop-shadow(0 0 8px rgba(251,191,36,0.75)) drop-shadow(0 0 2px rgba(251,191,36,1))}.globe_510-badge span{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#fbbf24;font-weight:700;font-size:11px;letter-spacing:0.05em;text-shadow:0 0 8px rgba(251,191,36,0.7)}';
+      document.head.appendChild(bs);
+    }
+
     // Read CMS data once — shared across all instances
     function readCMS() {
       var items = document.querySelectorAll('.globe_cms-item');
@@ -91,7 +99,8 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
 
   var PAL = {
     light: 0xb8c9cc, mid: 0x37535a, dark: 0x1c2227,
-    accent: 0x5a8a94, glow: 0x4a7580, bright: 0xd0e0e3
+    accent: 0x5a8a94, glow: 0x4a7580, bright: 0xd0e0e3,
+    amber: 0xfbbf24, amberMid: 0xf59e0b
   };
   var BROOKLYN = { city: "Brooklyn", region: "NY", lat: 40.6782, lng: -73.9442, type: "HQ" };
   var SHENZHEN = { city: "Shenzhen", region: "China", lat: 22.5431, lng: 114.0579, type: "hero" };
@@ -195,29 +204,45 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       var pos = ll2v(loc.lat, loc.lng, R * 1.004);
       var isHQ = loc.type === 'HQ', isHeroPin = loc.type === 'hero';
       var coreR = isHQ ? 0.014 : isHeroPin ? 0.012 : 0.009;
-      var core = new THREE.Mesh(new THREE.CircleGeometry(coreR, 24), new THREE.MeshBasicMaterial({ color: isHQ ? 0xd0e0e3 : isHeroPin ? 0xb8c9cc : 0x8aacb2, side: THREE.DoubleSide }));
+      var pinColor = isHQ ? PAL.amber : PAL.amberMid;
+      var core = new THREE.Mesh(new THREE.CircleGeometry(coreR, 24), new THREE.MeshBasicMaterial({ color: pinColor, side: THREE.DoubleSide }));
       core.position.copy(pos); core.lookAt(pos.clone().multiplyScalar(2)); pinGroup.add(core);
       var hitbox = new THREE.Mesh(new THREE.SphereGeometry(isHQ ? 0.05 : isHeroPin ? 0.045 : 0.04, 12, 12), new THREE.MeshBasicMaterial({ visible: false }));
       hitbox.position.copy(pos); hitbox.userData = Object.assign({}, loc, { _idx: idx }); pinGroup.add(hitbox); pinMeshes.push(hitbox);
       var ri = coreR + 0.004, ro = ri + (isHQ ? 0.003 : 0.002);
-      var ring = new THREE.Mesh(new THREE.RingGeometry(ri, ro, 32), new THREE.MeshBasicMaterial({ color: isHQ ? 0xd0e0e3 : isHeroPin ? 0x8aacb2 : 0x5a8a94, transparent: true, opacity: isHQ ? 0.5 : 0.35, side: THREE.DoubleSide }));
+      var ring = new THREE.Mesh(new THREE.RingGeometry(ri, ro, 32), new THREE.MeshBasicMaterial({ color: pinColor, transparent: true, opacity: isHQ ? 0.5 : 0.35, side: THREE.DoubleSide }));
       ring.position.copy(pos); ring.lookAt(pos.clone().multiplyScalar(2)); pinGroup.add(ring);
       var glowR = isHQ ? 0.04 : isHeroPin ? 0.035 : 0.025;
-      var glow = new THREE.Mesh(new THREE.SphereGeometry(glowR, 16, 16), new THREE.MeshBasicMaterial({ color: isHQ ? 0xd0e0e3 : isHeroPin ? 0xb8c9cc : 0x8aacb2, transparent: true, opacity: 0.15 }));
+      var glow = new THREE.Mesh(new THREE.SphereGeometry(glowR, 16, 16), new THREE.MeshBasicMaterial({ color: pinColor, transparent: true, opacity: 0.15 }));
       glow.position.copy(pos); glow.userData = { isGlow: true, baseR: glowR }; pinGroup.add(glow);
       var beamDir = pos.clone().normalize(), beamLen = isHQ ? 0.12 : isHeroPin ? 0.1 : 0.07;
       var beamEnd = pos.clone().add(beamDir.clone().multiplyScalar(beamLen));
-      var beam = new THREE.Line(new THREE.BufferGeometry().setFromPoints([pos.clone(), beamEnd]), new THREE.LineBasicMaterial({ color: isHQ ? 0xd0e0e3 : isHeroPin ? 0xb8c9cc : 0x8aacb2, transparent: true, opacity: isHQ ? 0.5 : 0.3 }));
+      var beam = new THREE.Line(new THREE.BufferGeometry().setFromPoints([pos.clone(), beamEnd]), new THREE.LineBasicMaterial({ color: pinColor, transparent: true, opacity: isHQ ? 0.5 : 0.3 }));
       pinGroup.add(beam);
-      var tipDot = new THREE.Mesh(new THREE.SphereGeometry(isHQ ? 0.008 : 0.005, 8, 8), new THREE.MeshBasicMaterial({ color: isHQ ? 0xd0e0e3 : 0xb8c9cc, transparent: true, opacity: 0.6 }));
+      var tipDot = new THREE.Mesh(new THREE.SphereGeometry(isHQ ? 0.008 : 0.005, 8, 8), new THREE.MeshBasicMaterial({ color: pinColor, transparent: true, opacity: 0.6 }));
       tipDot.position.copy(beamEnd); pinGroup.add(tipDot);
       var po = ro + 0.005, pi2 = po + (isHQ ? 0.004 : 0.003);
-      var pulse = new THREE.Mesh(new THREE.RingGeometry(po, pi2, 32), new THREE.MeshBasicMaterial({ color: isHQ ? 0xd0e0e3 : isHeroPin ? 0x8aacb2 : 0x6a9aa2, transparent: true, opacity: 0.2, side: THREE.DoubleSide }));
+      var pulse = new THREE.Mesh(new THREE.RingGeometry(po, pi2, 32), new THREE.MeshBasicMaterial({ color: pinColor, transparent: true, opacity: 0.2, side: THREE.DoubleSide }));
       pulse.position.copy(pos); pulse.lookAt(pos.clone().multiplyScalar(2)); pulse.userData = { isPulse: true }; pinGroup.add(pulse); pulseRings.push(pulse);
     }
     createPin(BROOKLYN, -1); createPin(SHENZHEN, -2);
     CMS_PROJECTS.forEach(function (p, i) { createPin(p, i); });
     globeGroup.add(pinGroup);
+
+    // Always-visible 5TEN badges over HQ + Shenzhen (HTML overlay, projected each frame)
+    if (getComputedStyle(wrapper).position === 'static') wrapper.style.position = 'relative';
+    var navLogo = document.querySelector('.navbar_logo-image, .navbar_logo-link img, .navbar_logo img, .navbar_logo');
+    var logoSrc = navLogo ? (navLogo.getAttribute('src') || navLogo.getAttribute('data-src') || '') : '';
+    var badges = [];
+    function makeBadge(loc) {
+      var b = document.createElement('div');
+      b.className = 'globe_510-badge' + (isHero ? ' is-hero' : '');
+      b.innerHTML = logoSrc ? '<img src="' + logoSrc + '" alt="5TEN">' : '<span>510</span>';
+      wrapper.appendChild(b);
+      badges.push({ el: b, loc: loc });
+    }
+    makeBadge(BROOKLYN);
+    makeBadge(SHENZHEN);
 
     // Arcs
     var arcGroup = new THREE.Group(), arcs = [];
@@ -265,7 +290,7 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
 
     // Mouse / drag
     var mouse = { x: 0, y: 0 }, ray = new THREE.Raycaster();
-    var dragging = false, dragX = 0, dragY = 0, velX = 0, velY = 0;
+    var dragging = false, dragX = 0, dragY = 0, velX = 0, velY = 0, isRecentering = false;
 
     canvas.addEventListener('mousemove', function (e) {
       var rect = canvas.getBoundingClientRect();
@@ -321,7 +346,7 @@ canvas.addEventListener('wheel', onWheel, { passive: false });
     function loop() {
       requestAnimationFrame(loop); t += 0.016;
       camera.position.z += (zoomTarget - camera.position.z) * 0.08;
-      if (!dragging && !hoveringPin) { globeGroup.rotation.y += 0.00025; velX *= 0.96; velY *= 0.96; }
+      if (!dragging && !hoveringPin && !isRecentering) { globeGroup.rotation.y += 0.00025; velX *= 0.96; velY *= 0.96; }
       globeGroup.rotation.y += velY;
       globeGroup.rotation.x = Math.max(-0.7, Math.min(0.7, globeGroup.rotation.x + velX));
       arcs.forEach(function (a) {
@@ -341,6 +366,21 @@ canvas.addEventListener('wheel', onWheel, { passive: false });
         if (child.geometry && child.geometry.type === 'RingGeometry' && !child.userData.isPulse) { var pulse = 0.15 + Math.sin(t * 1.2 + child.position.y * 4) * 0.25; child.material.opacity = pulse; }
         if (child.userData && child.userData.isGlow) { var pulse = 0.08 + Math.sin(t * 1.0 + child.position.z * 6) * 0.12; child.material.opacity = pulse; var gs = 1 + Math.sin(t * 0.8 + child.position.x * 3) * 0.3; child.scale.set(gs, gs, gs); }
       });
+      // Project always-visible 5TEN badges to screen-space each frame
+      if (badges.length) {
+        var wW = wrapper.clientWidth, wH = wrapper.clientHeight;
+        badges.forEach(function (bd) {
+          var world = ll2v(bd.loc.lat, bd.loc.lng, R * 1.03);
+          world.applyMatrix4(globeGroup.matrixWorld);
+          var proj = world.clone().project(camera);
+          var sx = (proj.x * 0.5 + 0.5) * wW;
+          var sy = (-proj.y * 0.5 + 0.5) * wH;
+          var scale = Math.max(0.55, 1 - proj.z * 0.35);
+          bd.el.style.left = sx + 'px';
+          bd.el.style.top = sy + 'px';
+          bd.el.style.setProperty('--gb-s', scale);
+        });
+      }
       renderer.render(scene, camera);
     }
     loop();
@@ -363,9 +403,44 @@ canvas.addEventListener('wheel', onWheel, { passive: false });
     });
     ro.observe(wrapper);
 
-    // Initial rotation — face Americas
-    globeGroup.rotation.y = -1.5;
-    globeGroup.rotation.x = isHero ? 0.15 : 0.2;
+    // North America framing — set initial + re-center on scroll into view
+    var NA_ROT_Y = 0.1, NA_ROT_X = isHero ? 0.3 : 0.35;
+    globeGroup.rotation.y = NA_ROT_Y;
+    globeGroup.rotation.x = NA_ROT_X;
+
+    function recenterToNA() {
+      if (isRecentering || dragging) return;
+      isRecentering = true;
+      velX = 0; velY = 0;
+      var startY = globeGroup.rotation.y, startX = globeGroup.rotation.x;
+      // shortest-path Y delta
+      var dY = NA_ROT_Y - startY;
+      while (dY > Math.PI) dY -= 2 * Math.PI;
+      while (dY < -Math.PI) dY += 2 * Math.PI;
+      var dX = NA_ROT_X - startX;
+      if (Math.abs(dY) < 0.005 && Math.abs(dX) < 0.005) { isRecentering = false; return; }
+      if (window.gsap) {
+        window.gsap.to(globeGroup.rotation, {
+          y: startY + dY, x: NA_ROT_X, duration: 1.2, ease: 'power3.inOut',
+          onComplete: function () { isRecentering = false; }
+        });
+      } else {
+        var t0 = performance.now(), dur = 1200;
+        (function step() {
+          var k = Math.min(1, (performance.now() - t0) / dur);
+          var ea = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+          globeGroup.rotation.y = startY + dY * ea;
+          globeGroup.rotation.x = startX + dX * ea;
+          if (k < 1) requestAnimationFrame(step);
+          else isRecentering = false;
+        })();
+      }
+    }
+
+    var naIO = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) recenterToNA(); });
+    }, { threshold: 0.35 });
+    naIO.observe(wrapper);
 
   }).catch(function (e) { console.warn('Globe init failed:', e); });
 }
