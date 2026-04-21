@@ -51,7 +51,7 @@ function initGlobes() {
         '.globe_510-badge{display:inline-flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;pointer-events:none;cursor:pointer;height:66px;padding:1px 8px;box-sizing:border-box;background:rgba(28,34,39,0.82);border:1px solid rgba(55,83,90,0.55);border-radius:6px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:5;opacity:0;transform:translate(-50%,-50%) scale(var(--gb-s,1));transition:opacity 180ms ease-out,background 200ms ease,border-color 200ms ease;will-change:transform,left,top,opacity}',
         '.globe_510-badge.is-hero{height:90px;padding:1px 10px}',
         '.globe_510-badge:hover{background:rgba(90,138,148,0.4);border-color:rgba(184,201,204,0.35)}',
-        '.globe_510-badge img{height:100%;width:auto;display:block;object-fit:contain;filter:drop-shadow(0 0 6px rgba(234,255,0,0.7))}',
+        '.globe_510-badge img{flex-shrink:0;height:100%;width:auto;max-width:none !important;display:block;filter:drop-shadow(0 0 6px rgba(234,255,0,0.7))}',
         '.globe_510-badge span{display:flex;align-items:center;justify-content:center;color:#eaff00;font-weight:700;font-size:12px;letter-spacing:0.08em;text-shadow:0 0 8px rgba(234,255,0,0.75)}',
         '#globe-510-preview{position:fixed;z-index:2147483647;pointer-events:none;opacity:0;transform:translate(-50%,-100%) translateY(-8px);transition:opacity 180ms ease,transform 180ms ease;min-width:220px;padding:14px 16px;background:rgba(28,34,39,0.96);border:1px solid rgba(55,83,90,0.55);border-radius:8px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 12px 40px rgba(0,0,0,0.55),0 0 0 1px rgba(234,255,0,0.08)}',
         '#globe-510-preview.is-visible{opacity:1;pointer-events:auto;transform:translate(-50%,-100%) translateY(-14px)}',
@@ -244,7 +244,8 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       var core = new THREE.Mesh(new THREE.CircleGeometry(coreR, 24), new THREE.MeshBasicMaterial({ color: pinColor, side: THREE.DoubleSide }));
       core.position.copy(pos); core.lookAt(pos.clone().multiplyScalar(2)); pinGroup.add(core);
       var hitbox = new THREE.Mesh(new THREE.SphereGeometry(isHQ ? 0.05 : isHeroPin ? 0.045 : 0.04, 12, 12), new THREE.MeshBasicMaterial({ visible: false }));
-      hitbox.position.copy(pos); hitbox.userData = Object.assign({}, loc, { _idx: idx }); pinGroup.add(hitbox); pinMeshes.push(hitbox);
+      hitbox.position.copy(pos); hitbox.userData = Object.assign({}, loc, { _idx: idx }); pinGroup.add(hitbox);
+      if (!isHQ && !isHeroPin) pinMeshes.push(hitbox); // HQ/hero use the 5TEN badge for interaction
       var ri = coreR + 0.004, ro = ri + (isHQ ? 0.003 : 0.002);
       var ring = new THREE.Mesh(new THREE.RingGeometry(ri, ro, 32), new THREE.MeshBasicMaterial({ color: pinColor, transparent: true, opacity: isHQ ? 0.5 : 0.35, side: THREE.DoubleSide }));
       ring.position.copy(pos); ring.lookAt(pos.clone().multiplyScalar(2)); pinGroup.add(ring);
@@ -261,8 +262,31 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       var pulse = new THREE.Mesh(new THREE.RingGeometry(po, pi2, 32), new THREE.MeshBasicMaterial({ color: pinColor, transparent: true, opacity: 0.2, side: THREE.DoubleSide }));
       pulse.position.copy(pos); pulse.lookAt(pos.clone().multiplyScalar(2)); pulse.userData = { isPulse: true }; pinGroup.add(pulse); pulseRings.push(pulse);
     }
+    // Deduplicate CMS projects by proximity — one pin per location cluster
+    var CLUSTER_DEG = 0.6; // ~65km at NYC latitude
+    var CMS_CLUSTERS = [];
+    CMS_PROJECTS.forEach(function (p) {
+      var existing = null;
+      for (var ci = 0; ci < CMS_CLUSTERS.length; ci++) {
+        var c = CMS_CLUSTERS[ci];
+        if (Math.abs(c.lat - p.lat) < CLUSTER_DEG && Math.abs(c.lng - p.lng) < CLUSTER_DEG) { existing = c; break; }
+      }
+      if (existing) { existing.projects.push(p); }
+      else { CMS_CLUSTERS.push({ lat: p.lat, lng: p.lng, city: p.city, region: p.region, projects: [p] }); }
+    });
+
     createPin(BROOKLYN, -1); createPin(SHENZHEN, -2);
-    CMS_PROJECTS.forEach(function (p, i) { createPin(p, i); });
+    CMS_CLUSTERS.forEach(function (c, i) {
+      var first = c.projects[0];
+      var clusterLoc = {
+        lat: c.lat, lng: c.lng, city: first.city, region: first.region,
+        _cluster: c.projects,
+        title: c.projects.length === 1 ? first.title : (c.projects.length + ' PROJECTS'),
+        img: c.projects.length === 1 ? first.img : '',
+        slug: c.projects.length === 1 ? first.slug : ''
+      };
+      createPin(clusterLoc, i);
+    });
     globeGroup.add(pinGroup);
 
     // Always-visible 5TEN badges over HQ + Shenzhen (HTML overlay, projected each frame)
@@ -302,6 +326,11 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       if (logoSrc) {
         var img = document.createElement('img');
         img.alt = '5TEN';
+        img.addEventListener('load', function () {
+          if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+            img.style.aspectRatio = img.naturalWidth + ' / ' + img.naturalHeight;
+          }
+        });
         img.addEventListener('error', function () { b.innerHTML = '<span>510</span>'; });
         img.src = logoSrc;
         b.appendChild(img);
@@ -341,7 +370,7 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       return { line: line, geom: geom, glowLine: glowLine, glowGeom: glowGeom, curve: curve, td: td, tdGlow: tdGlow, nPts: nPts, hero: hero, progress: Math.random() * 2.2, speed: hero ? 0.0015 : (0.002 + Math.random() * 0.003) };
     }
     arcs.push(makeArc(BROOKLYN, SHENZHEN, true));
-    CMS_PROJECTS.forEach(function (p) { arcs.push(makeArc(BROOKLYN, p, false)); });
+    CMS_CLUSTERS.forEach(function (c) { arcs.push(makeArc(BROOKLYN, { lat: c.lat, lng: c.lng }, false)); });
     globeGroup.add(arcGroup);
 
     // Preview card (shared element — only one exists in DOM)
@@ -350,16 +379,9 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       pvTitle = preview.querySelector('.gp-title'), pvCta = preview.querySelector('.gp-cta');
     var hoveredProj = null, hoveringPin = false, mouseOnCard = false, dismissTimer = null;
 
-    var CLUSTER_DEG = 0.6; // ~65km at NYC latitude — groups projects in the same metro
-    function findCluster(proj) {
-      if (!proj.slug) return [proj]; // HQ/hero — not clustered
-      return CMS_PROJECTS.filter(function (p) {
-        return Math.abs(p.lat - proj.lat) < CLUSTER_DEG && Math.abs(p.lng - proj.lng) < CLUSTER_DEG;
-      });
-    }
     function showPreview(proj, sx, sy) {
-      if (!proj.title) return;
-      var cluster = findCluster(proj);
+      if (!proj.title && !proj._cluster) return;
+      var cluster = proj._cluster || [proj];
       var isCluster = cluster.length > 1;
       pvLoc.textContent = proj.city + (proj.region ? ', ' + proj.region : '') + (isCluster ? ' · ' + cluster.length + ' PROJECTS' : '');
       if (isCluster) {
