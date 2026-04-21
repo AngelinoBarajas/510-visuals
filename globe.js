@@ -45,9 +45,9 @@ function initGlobes() {
       var bs = document.createElement('style');
       bs.id = 'globe-badge-styles';
       bs.textContent = [
-        '.globe_510-badge{display:inline-flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;pointer-events:none;cursor:pointer;height:32px;padding:4px 10px;box-sizing:border-box;background:rgba(28,34,39,0.82);border:1px solid rgba(55,83,90,0.55);border-radius:6px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:5;opacity:0;transform:translate(-50%,-50%) scale(var(--gb-s,1));transition:opacity 180ms ease-out,background 200ms ease,border-color 200ms ease;will-change:transform,left,top,opacity}',
-        '.globe_510-badge.is-hero{height:42px;padding:6px 14px}',
-        '.globe_510-badge:hover{background:rgba(90,138,148,0.45);border-color:rgba(234,255,0,0.55)}',
+        '.globe_510-badge{display:inline-flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;pointer-events:none;cursor:pointer;height:52px;padding:8px 16px;box-sizing:border-box;background:rgba(28,34,39,0.82);border:1px solid rgba(55,83,90,0.55);border-radius:6px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:5;opacity:0;transform:translate(-50%,-50%) scale(var(--gb-s,1));transition:opacity 180ms ease-out,background 200ms ease,border-color 200ms ease;will-change:transform,left,top,opacity}',
+        '.globe_510-badge.is-hero{height:68px;padding:10px 20px}',
+        '.globe_510-badge:hover{background:rgba(90,138,148,0.4);border-color:rgba(184,201,204,0.35)}',
         '.globe_510-badge img{height:100%;width:auto;display:block;object-fit:contain;filter:drop-shadow(0 0 6px rgba(234,255,0,0.7))}',
         '.globe_510-badge span{display:flex;align-items:center;justify-content:center;color:#eaff00;font-weight:700;font-size:12px;letter-spacing:0.08em;text-shadow:0 0 8px rgba(234,255,0,0.75)}',
         '#globe-510-preview{position:fixed;z-index:2147483647;pointer-events:none;opacity:0;transform:translate(-50%,-100%) translateY(-8px);transition:opacity 180ms ease,transform 180ms ease;min-width:220px;padding:14px 16px;background:rgba(28,34,39,0.96);border:1px solid rgba(55,83,90,0.55);border-radius:8px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 12px 40px rgba(0,0,0,0.55),0 0 0 1px rgba(234,255,0,0.08)}',
@@ -56,7 +56,7 @@ function initGlobes() {
         '#globe-510-preview .gp510-title{font-size:14px;color:#d0e0e3;font-weight:600;margin-bottom:12px;letter-spacing:0.02em}',
         '#globe-510-preview .gp510-actions{display:flex;gap:8px}',
         '#globe-510-preview .gp510-cta{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#d0e0e3;background:rgba(55,83,90,0.35);border:1px solid rgba(55,83,90,0.5);border-radius:6px;text-decoration:none;transition:all 0.2s ease}',
-        '#globe-510-preview .gp510-cta:hover{background:rgba(90,138,148,0.45);border-color:rgba(234,255,0,0.55);color:#fff}',
+        '#globe-510-preview .gp510-cta:hover{background:rgba(90,138,148,0.4);border-color:rgba(184,201,204,0.35);color:#fff}',
         '#globe-510-preview .gp510-cta svg{width:10px;height:10px;flex-shrink:0}'
       ].join('');
       document.head.appendChild(bs);
@@ -228,7 +228,7 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       var pos = ll2v(loc.lat, loc.lng, R * 1.004);
       var isHQ = loc.type === 'HQ', isHeroPin = loc.type === 'hero';
       var coreR = isHQ ? 0.014 : isHeroPin ? 0.012 : 0.009;
-      var pinColor = isHQ ? PAL.amber : PAL.amberMid;
+      var pinColor = isHQ ? PAL.tealGlow : PAL.teal;
       var core = new THREE.Mesh(new THREE.CircleGeometry(coreR, 24), new THREE.MeshBasicMaterial({ color: pinColor, side: THREE.DoubleSide }));
       core.position.copy(pos); core.lookAt(pos.clone().multiplyScalar(2)); pinGroup.add(core);
       var hitbox = new THREE.Mesh(new THREE.SphereGeometry(isHQ ? 0.05 : isHeroPin ? 0.045 : 0.04, 12, 12), new THREE.MeshBasicMaterial({ visible: false }));
