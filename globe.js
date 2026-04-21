@@ -61,7 +61,6 @@ function initGlobes() {
         '#globe-510-preview .gp510-cta{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#d0e0e3;background:rgba(55,83,90,0.35);border:1px solid rgba(55,83,90,0.5);border-radius:6px;text-decoration:none;transition:all 0.2s ease}',
         '#globe-510-preview .gp510-cta:hover{background:rgba(90,138,148,0.4);border-color:rgba(184,201,204,0.35);color:#fff}',
         '#globe-510-preview .gp510-cta svg{width:10px;height:10px;flex-shrink:0}',
-        '#globe-preview.is-cluster .gp-img,#globe-preview.is-cluster .gp-title,#globe-preview.is-cluster .gp-cta{display:none}',
         '#globe-preview .gp-cluster-list{display:none;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;margin-top:6px}',
         '#globe-preview.is-cluster .gp-cluster-list{display:flex}',
         '#globe-preview .gp-cluster-heading{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(184,201,204,0.5);font-weight:500;margin-top:10px;padding-top:10px;border-top:1px solid rgba(55,83,90,0.25)}',
@@ -277,7 +276,22 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       else { CMS_CLUSTERS.push({ lat: p.lat, lng: p.lng, city: p.city, region: p.region, projects: [p] }); }
     });
 
-    createPin(BROOKLYN, -1); createPin(SHENZHEN, -2);
+    // If HQ coincides with a CMS cluster, skip rendering a separate HQ pin and anchor
+    // the 5TEN badge/leader to the cluster centroid. Keeps "one pin per location."
+    function mergeHubWithCluster(hub) {
+      for (var ci = 0; ci < CMS_CLUSTERS.length; ci++) {
+        var c = CMS_CLUSTERS[ci];
+        if (Math.abs(c.lat - hub.lat) < CLUSTER_DEG && Math.abs(c.lng - hub.lng) < CLUSTER_DEG) {
+          hub.lat = c.lat; hub.lng = c.lng; hub._mergedCluster = c;
+          return true;
+        }
+      }
+      return false;
+    }
+    var bklnMerged = mergeHubWithCluster(BROOKLYN);
+    var shzMerged = mergeHubWithCluster(SHENZHEN);
+    if (!bklnMerged) createPin(BROOKLYN, -1);
+    if (!shzMerged) createPin(SHENZHEN, -2);
     CMS_CLUSTERS.forEach(function (c, i) {
       var first = c.projects[0];
       var clusterLoc = {
@@ -381,7 +395,10 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       return { line: line, geom: geom, glowLine: glowLine, glowGeom: glowGeom, curve: curve, td: td, tdGlow: tdGlow, nPts: nPts, hero: hero, progress: Math.random() * 2.2, speed: hero ? 0.0015 : (0.002 + Math.random() * 0.003) };
     }
     arcs.push(makeArc(BROOKLYN, SHENZHEN, true));
-    CMS_CLUSTERS.forEach(function (c) { arcs.push(makeArc(BROOKLYN, { lat: c.lat, lng: c.lng }, false)); });
+    CMS_CLUSTERS.forEach(function (c) {
+      if (BROOKLYN._mergedCluster === c) return; // skip self-arc when HQ merged with this cluster
+      arcs.push(makeArc(BROOKLYN, { lat: c.lat, lng: c.lng }, false));
+    });
     globeGroup.add(arcGroup);
 
     // Preview card (shared element — only one exists in DOM)
@@ -393,9 +410,14 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
     function showPreview(proj, sx, sy) {
       if (!proj.title && !proj._cluster) return;
       var cluster = proj._cluster || [proj];
-      var isCluster = cluster.length > 1;
-      pvLoc.textContent = proj.city + (proj.region ? ', ' + proj.region : '') + (isCluster ? ' · ' + cluster.length + ' PROJECTS' : '');
-      if (isCluster) {
+      var primary = cluster[0];
+      var others = cluster.slice(1);
+      pvImg.src = primary.img || '';
+      pvImg.style.display = primary.img ? 'block' : 'none';
+      pvTitle.textContent = primary.title || '';
+      pvCta.href = primary.slug || '#';
+      pvLoc.textContent = primary.city + (primary.region ? ', ' + primary.region : '');
+      if (others.length > 0) {
         preview.classList.add('is-cluster');
         var listEl = preview.querySelector('.gp-cluster-list');
         if (!listEl) {
@@ -404,7 +426,7 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
           preview.querySelector('.gp-body').appendChild(listEl);
         }
         listEl.innerHTML = '<div class="gp-cluster-heading">Other projects here</div>';
-        cluster.forEach(function (p) {
+        others.forEach(function (p) {
           var a = document.createElement('a');
           a.className = 'gp-cluster-item';
           a.href = p.slug || '#';
@@ -414,8 +436,6 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
         });
       } else {
         preview.classList.remove('is-cluster');
-        pvImg.src = proj.img || ''; pvImg.style.display = proj.img ? 'block' : 'none';
-        pvTitle.textContent = proj.title; pvCta.href = proj.slug || '#';
       }
       var l = sx + 20, t = sy - 80;
       if (l + 260 > innerWidth) l = sx - 260;
