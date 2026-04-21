@@ -46,7 +46,7 @@ function initGlobes() {
       bs.id = 'globe-badge-styles';
       bs.textContent = [
         '.globe_510-leaders{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:4;overflow:visible}',
-        '.globe_510-leader-line{stroke:#5eead4;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px rgba(94,234,212,0.55));transition:opacity 180ms ease-out}',
+        '.globe_510-leader-line{stroke:#5eead4;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:4 4;filter:drop-shadow(0 0 4px rgba(94,234,212,0.55));transition:opacity 180ms ease-out}',
         '.globe_510-leader-dot{fill:#5eead4;filter:drop-shadow(0 0 4px rgba(94,234,212,0.7));transition:opacity 180ms ease-out}',
         '.globe_510-badge{display:inline-flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;pointer-events:none;cursor:pointer;height:66px;padding:1px 8px;box-sizing:border-box;background:rgba(28,34,39,0.82);border:1px solid rgba(55,83,90,0.55);border-radius:6px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:5;opacity:0;transform:translate(-50%,-50%) scale(var(--gb-s,1));transition:opacity 180ms ease-out,background 200ms ease,border-color 200ms ease;will-change:transform,left,top,opacity}',
         '.globe_510-badge.is-hero{height:90px;padding:1px 10px}',
@@ -60,7 +60,16 @@ function initGlobes() {
         '#globe-510-preview .gp510-actions{display:flex;gap:8px}',
         '#globe-510-preview .gp510-cta{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#d0e0e3;background:rgba(55,83,90,0.35);border:1px solid rgba(55,83,90,0.5);border-radius:6px;text-decoration:none;transition:all 0.2s ease}',
         '#globe-510-preview .gp510-cta:hover{background:rgba(90,138,148,0.4);border-color:rgba(184,201,204,0.35);color:#fff}',
-        '#globe-510-preview .gp510-cta svg{width:10px;height:10px;flex-shrink:0}'
+        '#globe-510-preview .gp510-cta svg{width:10px;height:10px;flex-shrink:0}',
+        '#globe-preview.is-cluster .gp-img,#globe-preview.is-cluster .gp-title,#globe-preview.is-cluster .gp-cta{display:none}',
+        '#globe-preview .gp-cluster-list{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;margin-top:6px}',
+        '#globe-preview .gp-cluster-item{display:flex;align-items:center;gap:10px;padding:7px 8px;background:rgba(55,83,90,0.12);border:1px solid rgba(55,83,90,0.22);border-radius:6px;text-decoration:none;color:#d0e0e3;transition:background .2s ease,border-color .2s ease}',
+        '#globe-preview .gp-cluster-item:hover{background:rgba(90,138,148,0.3);border-color:rgba(184,201,204,0.3)}',
+        '#globe-preview .gp-cluster-item img{width:36px;height:36px;object-fit:cover;border-radius:4px;flex-shrink:0}',
+        '#globe-preview .gp-cluster-thumb{width:36px;height:36px;border-radius:4px;background:rgba(55,83,90,0.3);flex-shrink:0}',
+        '#globe-preview .gp-cluster-item .gp-cluster-title{flex:1;font-size:12px;font-weight:500;line-height:1.3;color:#d0e0e3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+        '#globe-preview .gp-cluster-item svg{width:10px;height:10px;color:#5a8a94;flex-shrink:0;transition:transform .2s,color .2s}',
+        '#globe-preview .gp-cluster-item:hover svg{color:#b8c9cc;transform:translateX(3px)}'
       ].join('');
       document.head.appendChild(bs);
     }
@@ -341,11 +350,40 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       pvTitle = preview.querySelector('.gp-title'), pvCta = preview.querySelector('.gp-cta');
     var hoveredProj = null, hoveringPin = false, mouseOnCard = false, dismissTimer = null;
 
+    var CLUSTER_DEG = 0.6; // ~65km at NYC latitude — groups projects in the same metro
+    function findCluster(proj) {
+      if (!proj.slug) return [proj]; // HQ/hero — not clustered
+      return CMS_PROJECTS.filter(function (p) {
+        return Math.abs(p.lat - proj.lat) < CLUSTER_DEG && Math.abs(p.lng - proj.lng) < CLUSTER_DEG;
+      });
+    }
     function showPreview(proj, sx, sy) {
       if (!proj.title) return;
-      pvImg.src = proj.img || ''; pvImg.style.display = proj.img ? 'block' : 'none';
-      pvLoc.textContent = proj.city + (proj.region ? ', ' + proj.region : '');
-      pvTitle.textContent = proj.title; pvCta.href = proj.slug || '#';
+      var cluster = findCluster(proj);
+      var isCluster = cluster.length > 1;
+      pvLoc.textContent = proj.city + (proj.region ? ', ' + proj.region : '') + (isCluster ? ' · ' + cluster.length + ' PROJECTS' : '');
+      if (isCluster) {
+        preview.classList.add('is-cluster');
+        var listEl = preview.querySelector('.gp-cluster-list');
+        if (!listEl) {
+          listEl = document.createElement('div');
+          listEl.className = 'gp-cluster-list';
+          preview.querySelector('.gp-body').appendChild(listEl);
+        }
+        listEl.innerHTML = '';
+        cluster.forEach(function (p) {
+          var a = document.createElement('a');
+          a.className = 'gp-cluster-item';
+          a.href = p.slug || '#';
+          var thumb = p.img ? '<img src="' + p.img + '" alt="">' : '<div class="gp-cluster-thumb"></div>';
+          a.innerHTML = thumb + '<span class="gp-cluster-title">' + p.title + '</span><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5h8M6 2l3 3-3 3"/></svg>';
+          listEl.appendChild(a);
+        });
+      } else {
+        preview.classList.remove('is-cluster');
+        pvImg.src = proj.img || ''; pvImg.style.display = proj.img ? 'block' : 'none';
+        pvTitle.textContent = proj.title; pvCta.href = proj.slug || '#';
+      }
       var l = sx + 20, t = sy - 80;
       if (l + 260 > innerWidth) l = sx - 260;
       if (t < 10) t = 10;
