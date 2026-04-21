@@ -35,7 +35,7 @@ function initGlobes() {
     if (!document.getElementById('globe-badge-styles')) {
       var bs = document.createElement('style');
       bs.id = 'globe-badge-styles';
-      bs.textContent = '.globe_510-badge{position:absolute;top:0;left:0;pointer-events:none;height:22px;width:auto;z-index:5;opacity:0;transform:translate(-50%,-50%) scale(var(--gb-s,1));transition:opacity 180ms ease-out;will-change:transform,left,top,opacity}.globe_510-badge.is-hero{height:34px}.globe_510-badge img{height:100%;width:auto;display:block;filter:drop-shadow(0 0 8px rgba(234,255,0,0.85)) drop-shadow(0 0 2px rgba(234,255,0,1))}.globe_510-badge span{display:flex;align-items:center;justify-content:center;height:100%;padding:0 6px;color:#eaff00;font-weight:700;font-size:11px;letter-spacing:0.05em;text-shadow:0 0 8px rgba(234,255,0,0.75)}';
+      bs.textContent = '.globe_510-badge{position:absolute;top:0;left:0;pointer-events:none;height:22px;z-index:5;opacity:0;transform:translate(-50%,-50%) scale(var(--gb-s,1));transition:opacity 180ms ease-out;will-change:transform,left,top,opacity}.globe_510-badge.is-hero{height:34px}.globe_510-badge img{height:100%;width:100%;display:block;object-fit:contain;filter:drop-shadow(0 0 8px rgba(234,255,0,0.85)) drop-shadow(0 0 2px rgba(234,255,0,1))}.globe_510-badge span{display:flex;align-items:center;justify-content:center;height:100%;padding:0 6px;color:#eaff00;font-weight:700;font-size:11px;letter-spacing:0.05em;text-shadow:0 0 8px rgba(234,255,0,0.75)}';
       document.head.appendChild(bs);
     }
 
@@ -100,7 +100,8 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
   var PAL = {
     light: 0xb8c9cc, mid: 0x37535a, dark: 0x1c2227,
     accent: 0x5a8a94, glow: 0x4a7580, bright: 0xd0e0e3,
-    amber: 0xeaff00, amberMid: 0xd4e600
+    amber: 0xeaff00, amberMid: 0xd4e600,
+    teal: 0x2dd4bf, tealGlow: 0x5eead4
   };
   var BROOKLYN = { city: "Brooklyn", region: "NY", lat: 40.6782, lng: -73.9442, type: "HQ" };
   var SHENZHEN = { city: "Shenzhen", region: "China", lat: 22.5431, lng: 114.0579, type: "hero" };
@@ -234,10 +235,30 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
     var navLogo = document.querySelector('.navbar_logo-image, .navbar_logo-link img, .navbar_logo img, .navbar_logo');
     var logoSrc = navLogo ? (navLogo.getAttribute('src') || navLogo.getAttribute('data-src') || '') : '';
     var badges = [];
+    var BADGE_H = isHero ? 34 : 22;
     function makeBadge(loc) {
       var b = document.createElement('div');
       b.className = 'globe_510-badge' + (isHero ? ' is-hero' : '');
-      b.innerHTML = logoSrc ? '<img src="' + logoSrc + '" alt="5TEN">' : '<span>510</span>';
+      if (logoSrc) {
+        var img = document.createElement('img');
+        img.alt = '5TEN';
+        img.addEventListener('load', function () {
+          var nw = img.naturalWidth, nh = img.naturalHeight;
+          if (nw > 0 && nh > 0) {
+            b.style.width = (BADGE_H * (nw / nh)) + 'px';
+          } else {
+            b.style.width = (BADGE_H * 3.4) + 'px'; // fallback aspect for 5TEN logo
+          }
+        });
+        img.addEventListener('error', function () {
+          b.innerHTML = '<span>510</span>';
+          b.style.width = 'auto';
+        });
+        img.src = logoSrc;
+        b.appendChild(img);
+      } else {
+        b.innerHTML = '<span>510</span>';
+      }
       wrapper.appendChild(b);
       badges.push({ el: b, loc: loc });
     }
@@ -255,10 +276,10 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       var nPts = hero ? 120 : 80, pts = curve.getPoints(nPts);
       var geom = new THREE.BufferGeometry().setFromPoints(pts); geom.setDrawRange(0, 0);
       var glowGeom = new THREE.BufferGeometry().setFromPoints(pts); glowGeom.setDrawRange(0, 0);
-      var glowLine = new THREE.Line(glowGeom, new THREE.LineBasicMaterial({ color: hero ? 0xd0e0e3 : PAL.accent, transparent: true, opacity: hero ? 0.15 : 0.08 })); arcGroup.add(glowLine);
-      var line = new THREE.Line(geom, new THREE.LineBasicMaterial({ color: hero ? PAL.bright : PAL.light, transparent: true, opacity: hero ? 0.5 : 0.3 })); arcGroup.add(line);
-      var td = new THREE.Mesh(new THREE.SphereGeometry(hero ? 0.006 : 0.004, 10, 10), new THREE.MeshBasicMaterial({ color: 0xd0e0e3, transparent: true, opacity: 0 })); arcGroup.add(td);
-      var tdGlow = new THREE.Mesh(new THREE.SphereGeometry(hero ? 0.018 : 0.012, 10, 10), new THREE.MeshBasicMaterial({ color: PAL.accent, transparent: true, opacity: 0 })); arcGroup.add(tdGlow);
+      var glowLine = new THREE.Line(glowGeom, new THREE.LineBasicMaterial({ color: PAL.tealGlow, transparent: true, opacity: hero ? 0.22 : 0.12 })); arcGroup.add(glowLine);
+      var line = new THREE.Line(geom, new THREE.LineBasicMaterial({ color: hero ? PAL.tealGlow : PAL.teal, transparent: true, opacity: hero ? 0.75 : 0.5 })); arcGroup.add(line);
+      var td = new THREE.Mesh(new THREE.SphereGeometry(hero ? 0.006 : 0.004, 10, 10), new THREE.MeshBasicMaterial({ color: PAL.tealGlow, transparent: true, opacity: 0 })); arcGroup.add(td);
+      var tdGlow = new THREE.Mesh(new THREE.SphereGeometry(hero ? 0.018 : 0.012, 10, 10), new THREE.MeshBasicMaterial({ color: PAL.teal, transparent: true, opacity: 0 })); arcGroup.add(tdGlow);
       return { line: line, geom: geom, glowLine: glowLine, glowGeom: glowGeom, curve: curve, td: td, tdGlow: tdGlow, nPts: nPts, hero: hero, progress: Math.random() * 2.2, speed: hero ? 0.0015 : (0.002 + Math.random() * 0.003) };
     }
     arcs.push(makeArc(BROOKLYN, SHENZHEN, true));
@@ -356,7 +377,7 @@ canvas.addEventListener('wheel', onWheel, { passive: false });
         a.geom.setDrawRange(s, Math.max(0, c)); a.glowGeom.setDrawRange(s, Math.max(0, c));
         if (a.progress < 1) { var pos = a.curve.getPoint(draw); a.td.position.copy(pos); a.td.material.opacity = 0.95; a.tdGlow.position.copy(pos); a.tdGlow.material.opacity = a.hero ? 0.25 : 0.15; }
         else { var fade = Math.max(0, 1 - (a.progress - 1) * 2.5); a.td.material.opacity = fade; a.tdGlow.material.opacity = fade * (a.hero ? 0.25 : 0.15); }
-        var bOp = a.hero ? 0.55 : 0.35, glowOp = a.hero ? 0.15 : 0.08;
+        var bOp = a.hero ? 0.8 : 0.55, glowOp = a.hero ? 0.25 : 0.15;
         a.line.material.opacity = a.progress < 1 ? bOp : Math.max(0, bOp - (a.progress - 1) * 1.2);
         a.glowLine.material.opacity = a.progress < 1 ? glowOp : Math.max(0, glowOp - (a.progress - 1) * 1.2);
       });
