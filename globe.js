@@ -45,6 +45,9 @@ function initGlobes() {
       var bs = document.createElement('style');
       bs.id = 'globe-badge-styles';
       bs.textContent = [
+        '.globe_510-leaders{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:4;overflow:visible}',
+        '.globe_510-leader-line{stroke:#5eead4;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px rgba(94,234,212,0.55));transition:opacity 180ms ease-out}',
+        '.globe_510-leader-dot{fill:#5eead4;filter:drop-shadow(0 0 4px rgba(94,234,212,0.7));transition:opacity 180ms ease-out}',
         '.globe_510-badge{display:inline-flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;pointer-events:none;cursor:pointer;height:66px;padding:1px 8px;box-sizing:border-box;background:rgba(28,34,39,0.82);border:1px solid rgba(55,83,90,0.55);border-radius:6px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:5;opacity:0;transform:translate(-50%,-50%) scale(var(--gb-s,1));transition:opacity 180ms ease-out,background 200ms ease,border-color 200ms ease;will-change:transform,left,top,opacity}',
         '.globe_510-badge.is-hero{height:90px;padding:1px 10px}',
         '.globe_510-badge:hover{background:rgba(90,138,148,0.4);border-color:rgba(184,201,204,0.35)}',
@@ -126,8 +129,8 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
     amber: 0xeaff00, amberMid: 0xd4e600,
     teal: 0x2dd4bf, tealGlow: 0x5eead4
   };
-  var BROOKLYN = { city: "Brooklyn", region: "NY", lat: 40.6782, lng: -73.9442, type: "HQ" };
-  var SHENZHEN = { city: "Shenzhen", region: "China", lat: 22.5431, lng: 114.0579, type: "hero" };
+  var BROOKLYN = { city: "Brooklyn", region: "NY", lat: 40.6782, lng: -73.9442, type: "HQ", offset: { x: 110, y: -90 } };
+  var SHENZHEN = { city: "Shenzhen", region: "China", lat: 22.5431, lng: 114.0579, type: "hero", offset: { x: 110, y: -90 } };
 
   decodeDots(DOTS_B64).then(function (LAND_DOTS) {
 
@@ -258,6 +261,10 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
     var navLogo = document.querySelector('.navbar_logo-image, .navbar_logo-link img, .navbar_logo img, .navbar_logo');
     var logoSrc = navLogo ? (navLogo.getAttribute('src') || navLogo.getAttribute('data-src') || '') : '';
     var badges = [];
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var leadersSvg = document.createElementNS(SVG_NS, 'svg');
+    leadersSvg.setAttribute('class', 'globe_510-leaders');
+    wrapper.appendChild(leadersSvg);
     var preview510 = document.getElementById('globe-510-preview');
     var pv510Timer = null;
     function show510(loc, rect) {
@@ -295,7 +302,14 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       b.addEventListener('mouseenter', function () { show510(loc, b.getBoundingClientRect()); });
       b.addEventListener('mouseleave', hide510);
       wrapper.appendChild(b);
-      badges.push({ el: b, loc: loc });
+      var line = document.createElementNS(SVG_NS, 'polyline');
+      line.setAttribute('class', 'globe_510-leader-line');
+      leadersSvg.appendChild(line);
+      var dot = document.createElementNS(SVG_NS, 'circle');
+      dot.setAttribute('class', 'globe_510-leader-dot');
+      dot.setAttribute('r', '3');
+      leadersSvg.appendChild(dot);
+      badges.push({ el: b, loc: loc, line: line, dot: dot });
     }
     makeBadge(BROOKLYN);
     makeBadge(SHENZHEN);
@@ -422,26 +436,44 @@ canvas.addEventListener('wheel', onWheel, { passive: false });
         if (child.geometry && child.geometry.type === 'RingGeometry' && !child.userData.isPulse) { var pulse = 0.15 + Math.sin(t * 1.2 + child.position.y * 4) * 0.25; child.material.opacity = pulse; }
         if (child.userData && child.userData.isGlow) { var pulse = 0.08 + Math.sin(t * 1.0 + child.position.z * 6) * 0.12; child.material.opacity = pulse; var gs = 1 + Math.sin(t * 0.8 + child.position.x * 3) * 0.3; child.scale.set(gs, gs, gs); }
       });
-      // Project 5TEN badges to screen-space each frame; hide when on back hemisphere
+      // Project 5TEN badges + leader lines to screen-space each frame; hide when on back hemisphere
       if (badges.length) {
         var wW = wrapper.clientWidth, wH = wrapper.clientHeight;
         var camDir = camera.position.clone().normalize();
+        var badgeHalfH = isHero ? 45 : 33;
         badges.forEach(function (bd) {
-          var world = ll2v(bd.loc.lat, bd.loc.lng, R * 1.03);
+          var world = ll2v(bd.loc.lat, bd.loc.lng, R * 1.004);
           world.applyMatrix4(globeGroup.matrixWorld);
-          // facing = dot(point-normal, camera-direction). >0 = front hemisphere, <0 = back.
           var facing = world.clone().normalize().dot(camDir);
           var opacity = facing > 0.22 ? 1 : Math.max(0, (facing - 0.05) / 0.17);
           bd.el.style.opacity = opacity;
           bd.el.style.pointerEvents = opacity >= 0.95 ? 'auto' : 'none';
-          if (opacity <= 0) return; // skip position math when hidden
+          if (bd.line) bd.line.style.opacity = opacity * 0.9;
+          if (bd.dot) bd.dot.style.opacity = opacity;
+          if (opacity <= 0) return;
           var proj = world.clone().project(camera);
-          var sx = (proj.x * 0.5 + 0.5) * wW;
-          var sy = (-proj.y * 0.5 + 0.5) * wH;
+          var px = (proj.x * 0.5 + 0.5) * wW;  // pin screen pos
+          var py = (-proj.y * 0.5 + 0.5) * wH;
+          var ox = (bd.loc.offset && bd.loc.offset.x) || 0;
+          var oy = (bd.loc.offset && bd.loc.offset.y) || 0;
+          var bx = px + ox, by = py + oy;       // badge center
           var scale = Math.max(0.6, 1 - proj.z * 0.3);
-          bd.el.style.left = sx + 'px';
-          bd.el.style.top = sy + 'px';
+          bd.el.style.left = bx + 'px';
+          bd.el.style.top = by + 'px';
           bd.el.style.setProperty('--gb-s', scale);
+          if (bd.line && bd.dot) {
+            if (ox === 0 && oy === 0) {
+              bd.line.setAttribute('points', '');
+              bd.dot.setAttribute('cx', -9999);
+            } else {
+              var endX = bx, endY = by + badgeHalfH;  // badge bottom center
+              var elbowY = endY + 22;                 // 22px below badge
+              var elbowX = bx;                        // vertically aligned with badge
+              bd.line.setAttribute('points', px + ',' + py + ' ' + elbowX + ',' + elbowY + ' ' + endX + ',' + endY);
+              bd.dot.setAttribute('cx', px);
+              bd.dot.setAttribute('cy', py);
+            }
+          }
         });
       }
       renderer.render(scene, camera);
