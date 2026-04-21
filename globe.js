@@ -35,7 +35,7 @@ function initGlobes() {
     if (!document.getElementById('globe-badge-styles')) {
       var bs = document.createElement('style');
       bs.id = 'globe-badge-styles';
-      bs.textContent = '.globe_510-badge{position:absolute;top:0;left:0;pointer-events:none;width:22px;height:22px;z-index:5;transform:translate(-50%,-50%) scale(var(--gb-s,1));will-change:transform,left,top}.globe_510-badge.is-hero{width:34px;height:34px}.globe_510-badge img{width:100%;height:100%;display:block;filter:drop-shadow(0 0 8px rgba(251,191,36,0.75)) drop-shadow(0 0 2px rgba(251,191,36,1))}.globe_510-badge span{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#fbbf24;font-weight:700;font-size:11px;letter-spacing:0.05em;text-shadow:0 0 8px rgba(251,191,36,0.7)}';
+      bs.textContent = '.globe_510-badge{position:absolute;top:0;left:0;pointer-events:none;height:22px;width:auto;z-index:5;opacity:0;transform:translate(-50%,-50%) scale(var(--gb-s,1));transition:opacity 180ms ease-out;will-change:transform,left,top,opacity}.globe_510-badge.is-hero{height:34px}.globe_510-badge img{height:100%;width:auto;display:block;filter:drop-shadow(0 0 8px rgba(234,255,0,0.85)) drop-shadow(0 0 2px rgba(234,255,0,1))}.globe_510-badge span{display:flex;align-items:center;justify-content:center;height:100%;padding:0 6px;color:#eaff00;font-weight:700;font-size:11px;letter-spacing:0.05em;text-shadow:0 0 8px rgba(234,255,0,0.75)}';
       document.head.appendChild(bs);
     }
 
@@ -100,7 +100,7 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
   var PAL = {
     light: 0xb8c9cc, mid: 0x37535a, dark: 0x1c2227,
     accent: 0x5a8a94, glow: 0x4a7580, bright: 0xd0e0e3,
-    amber: 0xfbbf24, amberMid: 0xf59e0b
+    amber: 0xeaff00, amberMid: 0xd4e600
   };
   var BROOKLYN = { city: "Brooklyn", region: "NY", lat: 40.6782, lng: -73.9442, type: "HQ" };
   var SHENZHEN = { city: "Shenzhen", region: "China", lat: 22.5431, lng: 114.0579, type: "hero" };
@@ -366,16 +366,22 @@ canvas.addEventListener('wheel', onWheel, { passive: false });
         if (child.geometry && child.geometry.type === 'RingGeometry' && !child.userData.isPulse) { var pulse = 0.15 + Math.sin(t * 1.2 + child.position.y * 4) * 0.25; child.material.opacity = pulse; }
         if (child.userData && child.userData.isGlow) { var pulse = 0.08 + Math.sin(t * 1.0 + child.position.z * 6) * 0.12; child.material.opacity = pulse; var gs = 1 + Math.sin(t * 0.8 + child.position.x * 3) * 0.3; child.scale.set(gs, gs, gs); }
       });
-      // Project always-visible 5TEN badges to screen-space each frame
+      // Project 5TEN badges to screen-space each frame; hide when on back hemisphere
       if (badges.length) {
         var wW = wrapper.clientWidth, wH = wrapper.clientHeight;
+        var camDir = camera.position.clone().normalize();
         badges.forEach(function (bd) {
           var world = ll2v(bd.loc.lat, bd.loc.lng, R * 1.03);
           world.applyMatrix4(globeGroup.matrixWorld);
+          // facing = dot(point-normal, camera-direction). >0 = front hemisphere, <0 = back.
+          var facing = world.clone().normalize().dot(camDir);
+          var opacity = facing > 0.22 ? 1 : Math.max(0, (facing - 0.05) / 0.17);
+          bd.el.style.opacity = opacity;
+          if (opacity <= 0) return; // skip position math when hidden
           var proj = world.clone().project(camera);
           var sx = (proj.x * 0.5 + 0.5) * wW;
           var sy = (-proj.y * 0.5 + 0.5) * wH;
-          var scale = Math.max(0.55, 1 - proj.z * 0.35);
+          var scale = Math.max(0.6, 1 - proj.z * 0.3);
           bd.el.style.left = sx + 'px';
           bd.el.style.top = sy + 'px';
           bd.el.style.setProperty('--gb-s', scale);
