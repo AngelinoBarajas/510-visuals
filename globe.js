@@ -51,11 +51,11 @@ function initGlobes() {
         '.globe_510-badge{display:inline-flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;pointer-events:none;cursor:pointer;height:52px;padding:10px 20px;box-sizing:border-box;background:rgba(28,34,39,0.82);border:1px solid rgba(55,83,90,0.55);border-radius:6px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:5;opacity:0;transform:translate(-50%,-50%) scale(var(--gb-s,1));transition:opacity 180ms ease-out,background 200ms ease,border-color 200ms ease;will-change:transform,left,top,opacity}',
         '.globe_510-badge.is-hero{height:64px;padding:10px 20px}',
         '.globe_510-badge:hover{background:rgba(90,138,148,0.4);border-color:rgba(184,201,204,0.35)}',
-        '.globe_510-badge img{flex-shrink:0;height:100%;width:auto;max-width:none !important;display:block;filter:drop-shadow(0 0 6px rgba(234,255,0,0.7))}',
+        '.globe_510-badge img{flex-shrink:0;height:100%;width:auto;max-width:none !important;display:block}',
         '.globe_510-badge span{display:flex;align-items:center;justify-content:center;color:#eaff00;font-weight:700;font-size:12px;letter-spacing:0.08em;text-shadow:0 0 8px rgba(234,255,0,0.75)}',
         '#globe-510-preview{position:fixed;z-index:2147483647;pointer-events:none;opacity:0;transform:translate(-50%,-100%) translateY(-8px);transition:opacity 180ms ease,transform 180ms ease;min-width:220px;padding:14px 16px;background:rgba(28,34,39,0.96);border:1px solid rgba(55,83,90,0.55);border-radius:8px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 12px 40px rgba(0,0,0,0.55),0 0 0 1px rgba(234,255,0,0.08)}',
         '#globe-510-preview.is-visible{opacity:1;pointer-events:auto;transform:translate(-50%,-100%) translateY(-14px)}',
-        '#globe-510-preview .gp510-loc{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:rgba(234,255,0,0.85);margin-bottom:4px;font-weight:600}',
+        '#globe-510-preview .gp510-loc{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(184,201,204,0.4);margin-bottom:5px;font-weight:500}',
         '#globe-510-preview .gp510-title{font-size:14px;color:#d0e0e3;font-weight:600;margin-bottom:12px;letter-spacing:0.02em}',
         '#globe-510-preview .gp510-actions{display:flex;gap:8px}',
         '#globe-510-preview .gp510-cta{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#d0e0e3;background:rgba(55,83,90,0.35);border:1px solid rgba(55,83,90,0.5);border-radius:6px;text-decoration:none;transition:all 0.2s ease}',
@@ -147,6 +147,7 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
   };
   var BROOKLYN = { city: "Brooklyn", region: "NY", lat: 40.6782, lng: -73.9442, type: "HQ", offset: { x: 110, y: -90 } };
   var SHENZHEN = { city: "Shenzhen", region: "China", lat: 22.5431, lng: 114.0579, type: "hero", offset: { x: 110, y: -90 } };
+  var BELGIUM  = { city: "Brussels", region: "Belgium", lat: 50.8503, lng: 4.3517, type: "HQ", offset: { x: 110, y: -90 } };
 
   decodeDots(DOTS_B64).then(function (LAND_DOTS) {
 
@@ -296,8 +297,10 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
     }
     var bklnMerged = mergeHubWithCluster(BROOKLYN);
     var shzMerged = mergeHubWithCluster(SHENZHEN);
+    var belMerged = mergeHubWithCluster(BELGIUM);
     if (!bklnMerged) createPin(BROOKLYN, -1);
     if (!shzMerged) createPin(SHENZHEN, -2);
+    if (!belMerged) createPin(BELGIUM, -3);
     CMS_CLUSTERS.forEach(function (c, i) {
       var first = c.projects[0];
       var clusterLoc = {
@@ -313,8 +316,9 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
 
     // Always-visible 5TEN badges over HQ + Shenzhen (HTML overlay, projected each frame)
     if (getComputedStyle(wrapper).position === 'static') wrapper.style.position = 'relative';
-    var navLogo = document.querySelector('.navbar_logo-image, .navbar_logo-link img, .navbar_logo img, .navbar_logo');
-    var logoSrc = navLogo ? (navLogo.getAttribute('src') || navLogo.getAttribute('data-src') || '') : '';
+    // Dedicated 5TEN stacked logo for globe HQ badges (uploaded to Webflow Assets).
+    // Hardcoded so the badge doesn't accidentally pick up the navbar logo if that's swapped later.
+    var logoSrc = 'https://cdn.prod.website-files.com/69cdf5b5f534b6b5bb6e6851/69e9a1ee4289a9a8fb6d086d_5_TEN_stacked-svg.svg';
     var badges = [];
     var SVG_NS = 'http://www.w3.org/2000/svg';
     var leadersSvg = document.createElementNS(SVG_NS, 'svg');
@@ -417,28 +421,35 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
     }
     makeBadge(BROOKLYN);
     makeBadge(SHENZHEN);
+    makeBadge(BELGIUM);
 
     // Arcs
     var arcGroup = new THREE.Group(), arcs = [];
-    function makeArc(start, end, hero) {
+    function makeArc(start, end, hero, isStatic) {
       var sv = ll2v(start.lat, start.lng, R * 1.008), ev = ll2v(end.lat, end.lng, R * 1.008);
       var dist = sv.distanceTo(ev);
       var mid = new THREE.Vector3().addVectors(sv, ev).multiplyScalar(0.5);
       mid.normalize().multiplyScalar(R + dist * (hero ? 0.4 : 0.28));
       var curve = new THREE.QuadraticBezierCurve3(sv, mid, ev);
       var nPts = hero ? 120 : 80, pts = curve.getPoints(nPts);
-      var geom = new THREE.BufferGeometry().setFromPoints(pts); geom.setDrawRange(0, 0);
-      var glowGeom = new THREE.BufferGeometry().setFromPoints(pts); glowGeom.setDrawRange(0, 0);
+      var geom = new THREE.BufferGeometry().setFromPoints(pts);
+      var glowGeom = new THREE.BufferGeometry().setFromPoints(pts);
+      if (isStatic) { geom.setDrawRange(0, nPts); glowGeom.setDrawRange(0, nPts); }
+      else { geom.setDrawRange(0, 0); glowGeom.setDrawRange(0, 0); }
       var glowLine = new THREE.Line(glowGeom, new THREE.LineBasicMaterial({ color: PAL.tealGlow, transparent: true, opacity: hero ? 0.22 : 0.12 })); arcGroup.add(glowLine);
       var line = new THREE.Line(geom, new THREE.LineBasicMaterial({ color: hero ? PAL.tealGlow : PAL.teal, transparent: true, opacity: hero ? 0.75 : 0.5 })); arcGroup.add(line);
       var td = new THREE.Mesh(new THREE.SphereGeometry(hero ? 0.006 : 0.004, 10, 10), new THREE.MeshBasicMaterial({ color: PAL.tealGlow, transparent: true, opacity: 0 })); arcGroup.add(td);
       var tdGlow = new THREE.Mesh(new THREE.SphereGeometry(hero ? 0.018 : 0.012, 10, 10), new THREE.MeshBasicMaterial({ color: PAL.teal, transparent: true, opacity: 0 })); arcGroup.add(tdGlow);
-      return { line: line, geom: geom, glowLine: glowLine, glowGeom: glowGeom, curve: curve, td: td, tdGlow: tdGlow, nPts: nPts, hero: hero, progress: Math.random() * 2.2, speed: hero ? 0.0015 : (0.002 + Math.random() * 0.003) };
+      return { line: line, geom: geom, glowLine: glowLine, glowGeom: glowGeom, curve: curve, td: td, tdGlow: tdGlow, nPts: nPts, hero: hero, isStatic: !!isStatic, progress: Math.random() * 2.2, speed: hero ? 0.0015 : (0.002 + Math.random() * 0.003) };
     }
-    arcs.push(makeArc(BROOKLYN, SHENZHEN, true));
+    // HQ ↔ HQ lines: constantly visible (static). Brooklyn ↔ Shenzhen ↔ Belgium triangle.
+    arcs.push(makeArc(BROOKLYN, SHENZHEN, true, true));
+    arcs.push(makeArc(BROOKLYN, BELGIUM, true, true));
+    arcs.push(makeArc(SHENZHEN, BELGIUM, true, true));
+    // CMS project arcs: animated, start from Brooklyn
     CMS_CLUSTERS.forEach(function (c) {
       if (BROOKLYN._mergedCluster === c) return; // skip self-arc when HQ merged with this cluster
-      arcs.push(makeArc(BROOKLYN, { lat: c.lat, lng: c.lng }, false));
+      arcs.push(makeArc(BROOKLYN, { lat: c.lat, lng: c.lng }, false, false));
     });
     globeGroup.add(arcGroup);
 
@@ -588,6 +599,16 @@ canvas.addEventListener('wheel', onWheel, { passive: false });
       globeGroup.rotation.y += velY;
       globeGroup.rotation.x = Math.max(-0.7, Math.min(0.7, globeGroup.rotation.x + velX));
       arcs.forEach(function (a) {
+        if (a.isStatic) {
+          // Static HQ ↔ HQ line — fully drawn, constant opacity, no traveling dot
+          a.geom.setDrawRange(0, a.nPts);
+          a.glowGeom.setDrawRange(0, a.nPts);
+          a.line.material.opacity = 0.55;
+          a.glowLine.material.opacity = 0.18;
+          a.td.material.opacity = 0;
+          a.tdGlow.material.opacity = 0;
+          return;
+        }
         a.progress += a.speed; if (a.progress > 2.2) a.progress = 0;
         var draw = Math.min(a.progress, 1), trail = Math.max(0, a.progress - (a.hero ? 0.7 : 0.5));
         var s = Math.floor(trail * a.nPts), c = Math.floor(draw * a.nPts) - s;
