@@ -48,8 +48,8 @@ function initGlobes() {
         '.globe_510-leaders{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:4;overflow:visible}',
         '.globe_510-leader-line{stroke:#5eead4;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:4 4;filter:drop-shadow(0 0 4px rgba(94,234,212,0.55));transition:opacity 180ms ease-out}',
         '.globe_510-leader-dot{fill:#5eead4;filter:drop-shadow(0 0 4px rgba(94,234,212,0.7));transition:opacity 180ms ease-out}',
-        '.globe_510-badge{display:inline-flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;pointer-events:none;cursor:pointer;height:52px;padding:10px 20px;box-sizing:border-box;background:rgba(28,34,39,0.82);border:1px solid rgba(55,83,90,0.55);border-radius:6px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:5;opacity:0;transform:translate(-50%,-50%) scale(var(--gb-s,1));transition:opacity 180ms ease-out,background 200ms ease,border-color 200ms ease;will-change:transform,left,top,opacity}',
-        '.globe_510-badge.is-hero{height:64px;padding:10px 20px}',
+        '.globe_510-badge{display:inline-flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;pointer-events:none;cursor:pointer;height:62px;padding:10px 20px;box-sizing:border-box;background:rgba(28,34,39,0.82);border:1px solid rgba(55,83,90,0.55);border-radius:6px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:5;opacity:0;transform:translate(-50%,-50%) scale(var(--gb-s,1));transition:opacity 180ms ease-out,background 200ms ease,border-color 200ms ease;will-change:transform,left,top,opacity}',
+        '.globe_510-badge.is-hero{height:76px;padding:10px 20px}',
         '.globe_510-badge:hover{background:rgba(90,138,148,0.4);border-color:rgba(184,201,204,0.35)}',
         '.globe_510-badge img{flex-shrink:0;height:100%;width:auto;max-width:none !important;display:block}',
         '.globe_510-badge span{display:flex;align-items:center;justify-content:center;color:#eaff00;font-weight:700;font-size:12px;letter-spacing:0.08em;text-shadow:0 0 8px rgba(234,255,0,0.75)}',
@@ -74,8 +74,8 @@ function initGlobes() {
         '@media (max-width:600px){',
         '#globe-preview{width:auto !important;max-width:calc(100vw - 24px) !important;min-width:260px}',
         '#globe-510-preview{min-width:0;width:auto;max-width:calc(100vw - 24px)}',
-        '.globe_510-badge{height:44px;padding:8px 14px}',
-        '.globe_510-badge.is-hero{height:52px;padding:8px 16px}',
+        '.globe_510-badge{height:52px;padding:8px 14px}',
+        '.globe_510-badge.is-hero{height:62px;padding:8px 16px}',
         '}'
       ].join('');
       document.head.appendChild(bs);
