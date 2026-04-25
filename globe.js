@@ -597,7 +597,7 @@ canvas.addEventListener('wheel', onWheel, { passive: false });
       camera.position.z += (zoomTarget - camera.position.z) * 0.08;
       if (!dragging && !hoveringPin && !isRecentering) { globeGroup.rotation.y += 0.00025; velX *= 0.96; velY *= 0.96; }
       globeGroup.rotation.y += velY;
-      globeGroup.rotation.x = Math.max(-0.7, Math.min(0.7, globeGroup.rotation.x + velX));
+      globeGroup.rotation.x += velX;
       arcs.forEach(function (a) {
         if (a.isStatic) {
           // Static HQ ↔ HQ line — fully drawn, constant opacity, no traveling dot
