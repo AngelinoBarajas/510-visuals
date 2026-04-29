@@ -25,7 +25,7 @@ function initGlobes() {
 
     // Inject shared preview card once
     if (!document.getElementById('globe-preview')) {
-      var pvHTML = '<div id="globe-preview"><img class="gp-img" src="" alt=""><div class="gp-body"><div class="gp-loc"></div><div class="gp-title"></div><a class="gp-cta" href="#">View Project<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5h8M6 2l3 3-3 3"/></svg></a></div></div>';
+      var pvHTML = '<div id="globe-preview"><img class="gp-img" src="" alt=""><div class="gp-body"><div class="gp-loc"></div><div class="gp-title"></div><a class="gp-cta" href="#"><span class="gp-cta-label">View Project</span><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5h8M6 2l3 3-3 3"/></svg></a></div></div>';
       var d = document.createElement('div');
       d.innerHTML = pvHTML;
       document.body.appendChild(d.firstChild);
@@ -96,7 +96,8 @@ function initGlobes() {
           lat: lat, lng: lng,
           title: el.getAttribute('data-globe-title') || '',
           img: imgEl ? imgEl.getAttribute('src') : '',
-          slug: '/projects/' + (el.getAttribute('data-globe-slug') || '')
+          slug: '/projects/' + (el.getAttribute('data-globe-slug') || ''),
+          hasCaseStudy: el.getAttribute('data-globe-has-case-study') !== 'false'
         });
       });
       return projects;
@@ -467,7 +468,14 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       pvImg.src = primary.img || '';
       pvImg.style.display = primary.img ? 'block' : 'none';
       pvTitle.textContent = primary.title || '';
-      pvCta.href = primary.slug || '#';
+      var pvCtaLabel = pvCta.querySelector('.gp-cta-label');
+      if (primary.hasCaseStudy) {
+        pvCta.href = primary.slug || '#';
+        if (pvCtaLabel) pvCtaLabel.textContent = 'View Project';
+      } else {
+        pvCta.href = '/projects';
+        if (pvCtaLabel) pvCtaLabel.textContent = 'Explore Projects';
+      }
       pvLoc.textContent = primary.city + (primary.region ? ', ' + primary.region : '');
       if (others.length > 0) {
         preview.classList.add('is-cluster');
@@ -481,7 +489,7 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
         others.forEach(function (p) {
           var a = document.createElement('a');
           a.className = 'gp-cluster-item';
-          a.href = p.slug || '#';
+          a.href = p.hasCaseStudy ? (p.slug || '#') : '/projects';
           var thumb = p.img ? '<img src="' + p.img + '" alt="">' : '<div class="gp-cluster-thumb"></div>';
           a.innerHTML = thumb + '<span class="gp-cluster-title">' + p.title + '</span><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5h8M6 2l3 3-3 3"/></svg>';
           listEl.appendChild(a);
@@ -510,6 +518,26 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
     var mouse = { x: 0, y: 0 }, ray = new THREE.Raycaster();
     var dragging = false, dragX = 0, dragY = 0, velX = 0, velY = 0, isRecentering = false;
 
+    // Filter raycast hits to pins on the visible hemisphere only — back-side pins
+    // are occluded by the globe sphere but raycaster doesn't know that.
+    // Test: dot product of pin's outward normal (pinWorldPos - globeCenter) with
+    // camera direction (cameraPos - globeCenter). > 0 means same hemisphere as camera.
+    var _pinNormal = new THREE.Vector3();
+    var _camDir = new THREE.Vector3();
+    var _globeCenter = new THREE.Vector3();
+    var _pinWorldPos = new THREE.Vector3();
+    function firstVisibleHit(hits) {
+      if (!hits.length) return null;
+      globeGroup.getWorldPosition(_globeCenter);
+      _camDir.copy(camera.position).sub(_globeCenter).normalize();
+      for (var i = 0; i < hits.length; i++) {
+        hits[i].object.getWorldPosition(_pinWorldPos);
+        _pinNormal.copy(_pinWorldPos).sub(_globeCenter).normalize();
+        if (_pinNormal.dot(_camDir) > 0.05) return hits[i];
+      }
+      return null;
+    }
+
     canvas.addEventListener('mousemove', function (e) {
       var rect = canvas.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -517,8 +545,9 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
       if (dragging) { velY = (e.clientX - dragX) * 0.0008; velX = (e.clientY - dragY) * 0.0008; dragX = e.clientX; dragY = e.clientY; if (hoveredProj && !mouseOnCard) dismissPreview(); return; }
       ray.setFromCamera(mouse, camera);
       var hits = ray.intersectObjects(pinMeshes);
-      if (hits.length) {
-        var p = hits[0].object.userData; cancelDismiss(); hoveringPin = true;
+      var hit = firstVisibleHit(hits);
+      if (hit) {
+        var p = hit.object.userData; cancelDismiss(); hoveringPin = true;
         if (hoveredProj && hoveredProj !== p) hidePreview();
         if (hoveredProj !== p) showPreview(p, e.clientX, e.clientY);
         canvas.style.cursor = 'pointer';
@@ -560,10 +589,11 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
         mouse.y = -((lt.clientY - rect.top) / rect.height) * 2 + 1;
         ray.setFromCamera(mouse, camera);
         var hits = ray.intersectObjects(pinMeshes);
-        if (hits.length) {
+        var hit = firstVisibleHit(hits);
+        if (hit) {
           cancelDismiss();
           hoveringPin = true;
-          showPreview(hits[0].object.userData, lt.clientX, lt.clientY);
+          showPreview(hit.object.userData, lt.clientX, lt.clientY);
         } else if (hoveredProj) {
           dismissPreview();
         }
