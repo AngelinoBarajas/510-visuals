@@ -25,7 +25,7 @@ function initGlobes() {
 
     // Inject shared preview card once
     if (!document.getElementById('globe-preview')) {
-      var pvHTML = '<div id="globe-preview"><img class="gp-img" src="" alt=""><div class="gp-body"><div class="gp-loc"></div><div class="gp-title"></div><a class="gp-cta" href="#"><span class="gp-cta-label">View Project</span><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5h8M6 2l3 3-3 3"/></svg></a></div></div>';
+      var pvHTML = '<div id="globe-preview"><button type="button" class="gp-close" aria-label="Close">×</button><img class="gp-img" src="" alt=""><div class="gp-body"><div class="gp-loc"></div><div class="gp-title"></div><a class="gp-cta" href="#"><span class="gp-cta-label">View Project</span><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5h8M6 2l3 3-3 3"/></svg></a></div></div>';
       var d = document.createElement('div');
       d.innerHTML = pvHTML;
       document.body.appendChild(d.firstChild);
@@ -34,7 +34,7 @@ function initGlobes() {
     // Inject shared 5TEN popup card once
     if (!document.getElementById('globe-510-preview')) {
       var arrowSvg = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5h8M6 2l3 3-3 3"/></svg>';
-      var pv510HTML = '<div id="globe-510-preview"><div class="gp510-body"><div class="gp510-loc"></div><div class="gp510-title">5TEN VISUALS</div><div class="gp510-actions"><a class="gp510-cta" href="/contact">Contact' + arrowSvg + '</a><a class="gp510-cta" href="/about">About' + arrowSvg + '</a></div></div></div>';
+      var pv510HTML = '<div id="globe-510-preview"><button type="button" class="gp510-close" aria-label="Close">×</button><div class="gp510-body"><div class="gp510-loc"></div><div class="gp510-title">5TEN VISUALS</div><div class="gp510-actions"><a class="gp510-cta" href="/contact">Contact' + arrowSvg + '</a><a class="gp510-cta" href="/about">About' + arrowSvg + '</a></div></div></div>';
       var d2 = document.createElement('div');
       d2.innerHTML = pv510HTML;
       document.body.appendChild(d2.firstChild);
@@ -71,14 +71,84 @@ function initGlobes() {
         '#globe-preview .gp-cluster-item .gp-cluster-title{flex:1;font-size:12px;font-weight:500;line-height:1.3;color:#d0e0e3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
         '#globe-preview .gp-cluster-item svg{width:10px;height:10px;color:#5a8a94;flex-shrink:0;transition:transform .2s,color .2s}',
         '#globe-preview .gp-cluster-item:hover svg{color:#b8c9cc;transform:translateX(3px)}',
+        '#globe-preview .gp-close{position:absolute;top:8px;right:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;color:#d0e0e3;background:rgba(20,26,30,0.7);border:1px solid rgba(55,83,90,0.5);border-radius:50%;cursor:pointer;padding:0;z-index:3;transition:background .2s ease,border-color .2s ease,color .2s ease;-webkit-appearance:none;appearance:none;font-family:inherit}',
+        '#globe-preview .gp-close:hover{background:rgba(90,138,148,0.4);border-color:rgba(184,201,204,0.35);color:#fff}',
+        '#globe-510-preview .gp510-close{position:absolute;top:6px;right:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;color:#d0e0e3;background:rgba(20,26,30,0.7);border:1px solid rgba(55,83,90,0.5);border-radius:50%;cursor:pointer;padding:0;transition:background .2s ease,border-color .2s ease,color .2s ease;-webkit-appearance:none;appearance:none;font-family:inherit}',
+        '#globe-510-preview .gp510-close:hover{background:rgba(90,138,148,0.4);border-color:rgba(184,201,204,0.35);color:#fff}',
         '@media (max-width:600px){',
         '#globe-preview{width:auto !important;max-width:calc(100vw - 24px) !important;min-width:260px}',
         '#globe-510-preview{min-width:0;width:auto;max-width:calc(100vw - 24px)}',
         '.globe_510-badge{height:52px;padding:8px 14px}',
         '.globe_510-badge.is-hero{height:62px;padding:8px 16px}',
+        '#globe-preview .gp-close{width:32px;height:32px;font-size:20px;top:10px;right:10px}',
+        '#globe-510-preview .gp510-close{width:30px;height:30px;font-size:18px;top:8px;right:8px}',
         '}'
       ].join('');
       document.head.appendChild(bs);
+    }
+
+    // Wire shared popup behavior (close X + scroll-to-dismiss + auto-timeout) — once per page
+    if (!window.__tenGlobePopupBehaviorBound) {
+      window.__tenGlobePopupBehaviorBound = true;
+      var pv = document.getElementById('globe-preview');
+      var pv510 = document.getElementById('globe-510-preview');
+      var AUTO_DISMISS_MS = 6000;
+      var SCROLL_DISMISS_PX = 30;
+      var SETTLE_MS = 250;
+
+      function dismissPv() { if (pv) pv.classList.remove('is-visible', 'is-cluster'); }
+      function dismiss510() { if (pv510) pv510.classList.remove('is-visible'); }
+
+      // X close buttons
+      var pvClose = pv && pv.querySelector('.gp-close');
+      if (pvClose) {
+        pvClose.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); dismissPv(); });
+      }
+      var pv510Close = pv510 && pv510.querySelector('.gp510-close');
+      if (pv510Close) {
+        pv510Close.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); dismiss510(); });
+      }
+
+      // Track open-state per popup; observe class mutations so we don't have to touch existing show/hide paths
+      var pvOpenedAt = 0, pvScrollY = 0, pvAutoTimer = null;
+      var p5OpenedAt = 0, p5ScrollY = 0, p5AutoTimer = null;
+      function getScrollY() { return window.scrollY || window.pageYOffset || 0; }
+
+      if (pv && window.MutationObserver) {
+        new MutationObserver(function () {
+          if (pv.classList.contains('is-visible')) {
+            pvOpenedAt = Date.now();
+            pvScrollY = getScrollY();
+            if (pvAutoTimer) clearTimeout(pvAutoTimer);
+            pvAutoTimer = setTimeout(function () {
+              if (pv.classList.contains('is-visible')) dismissPv();
+            }, AUTO_DISMISS_MS);
+          } else if (pvAutoTimer) {
+            clearTimeout(pvAutoTimer); pvAutoTimer = null;
+          }
+        }).observe(pv, { attributes: true, attributeFilter: ['class'] });
+      }
+      if (pv510 && window.MutationObserver) {
+        new MutationObserver(function () {
+          if (pv510.classList.contains('is-visible')) {
+            p5OpenedAt = Date.now();
+            p5ScrollY = getScrollY();
+            if (p5AutoTimer) clearTimeout(p5AutoTimer);
+            p5AutoTimer = setTimeout(function () {
+              if (pv510.classList.contains('is-visible')) dismiss510();
+            }, AUTO_DISMISS_MS);
+          } else if (p5AutoTimer) {
+            clearTimeout(p5AutoTimer); p5AutoTimer = null;
+          }
+        }).observe(pv510, { attributes: true, attributeFilter: ['class'] });
+      }
+
+      // Scroll-to-dismiss — works on mouse wheel + touch + Lenis (all trigger window scroll)
+      window.addEventListener('scroll', function () {
+        var now = Date.now(), y = getScrollY();
+        if (pv && pv.classList.contains('is-visible') && (now - pvOpenedAt) > SETTLE_MS && Math.abs(y - pvScrollY) > SCROLL_DISMISS_PX) dismissPv();
+        if (pv510 && pv510.classList.contains('is-visible') && (now - p5OpenedAt) > SETTLE_MS && Math.abs(y - p5ScrollY) > SCROLL_DISMISS_PX) dismiss510();
+      }, { passive: true });
     }
 
     // Read CMS data once — shared across all instances
@@ -151,6 +221,20 @@ function createGlobeInstance(wrapper, isHero, CMS_PROJECTS) {
   var BELGIUM  = { city: "Brussels", region: "Belgium", lat: 50.8503, lng: 4.3517, type: "HQ", offset: { x: 110, y: -90 } };
 
   decodeDots(DOTS_B64).then(function (LAND_DOTS) {
+
+    // Append Antarctica — base dataset stops around -60° lat, so polar cap is missing.
+    // Generate a uniform-density dot grid from -62° down to -85° lat. Longitude step
+    // scales with 1/cos(lat) so density stays roughly even on the sphere surface.
+    (function () {
+      var step = 2.4; // ° lat between rings — tuned to match neighbouring continent density
+      for (var lat = -62; lat >= -85; lat -= step) {
+        var c = Math.cos(lat * Math.PI / 180);
+        var lngStep = step / Math.max(0.18, c);
+        for (var lng = -180; lng < 180; lng += lngStep) LAND_DOTS.push([lat, lng]);
+      }
+      // Single anchor dot near pole so the cap closes visually
+      LAND_DOTS.push([-89, 0]);
+    })();
 
     var W = wrapper.clientWidth, H = wrapper.clientHeight;
     var canvas = document.createElement('canvas');
